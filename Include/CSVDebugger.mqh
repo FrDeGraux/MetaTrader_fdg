@@ -12,9 +12,12 @@ private:
 
 public:
                      CSVDebugger(string ctx);
+                     CSVDebugger();
                     ~CSVDebugger();
-                    void writeMsg(string msg);
+                    void init(string ctx);
+                    bool writeMsg(string msg);
 private : 
+                     string filename;
                      int handleFile;
   };
 //+------------------------------------------------------------------+
@@ -28,21 +31,30 @@ StringReplace(sTime,":",'_');
 
 return sTime;
 }
-CSVDebugger::CSVDebugger(string ctx)
-  {
-  string filename = buildFileName() + ".csv" ; 
-   this.handleFile = FileOpen(filename,FILE_CSV|FILE_READ|FILE_WRITE, ',');
-  }
+void CSVDebugger::init(string ctx)
+{
+   this.filename = buildFileName() + ".csv" ; 
+   this.handleFile = FileOpen(this.filename,FILE_CSV|FILE_READ|FILE_WRITE, ',');
+   if(this.handleFile > 0)
+       Print("File " + this.filename + " is opened");
+}
+CSVDebugger::CSVDebugger()
+{
+
+}
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 CSVDebugger::~CSVDebugger()
   {
    FileClose(this.handleFile);
+      Print("File " + this.filename + " is closed");
   }
 //+------------------------------------------------------------------+
-void CSVDebugger::writeMsg(string msg)
+bool CSVDebugger::writeMsg(string msg)
 {
-      FileWrite(this.handleFile,msg);
+      Print("going to write msg : " + msg);
+      return(FileWrite(this.handleFile,msg) > 0);
     
 }

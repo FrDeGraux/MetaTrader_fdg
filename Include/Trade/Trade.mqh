@@ -333,7 +333,9 @@ bool CTrade::PositionOpen(const string symbol,const ENUM_ORDER_TYPE order_type,c
       return(false);
    m_request.comment=comment;
 //--- action and return the result
-   return(OrderSend(m_request,m_result));
+   int res = OrderSend(m_request,m_result);
+
+   return(res);
   }
 //+------------------------------------------------------------------+
 //| Modify specified opened position                                 |

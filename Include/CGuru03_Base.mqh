@@ -15,17 +15,23 @@
 #include <CSVDebugger.mqh> 
 #include <Indicators\CICustomMA.mqh>
 #include <Indicators\CICustomATR.mqh>
+#include <CSVDebugger.mqh> 
+#include <MqlOutputMessageBase.mqh>
 class CGuruEx03_Base : CArrayObj
-  {
+  { 
 private:
-
+   CSVDebugger* objCSVDebug;
    double ATR_StopLossRange;
    double ATR_TPRange;
    ulong             OrderNumber;
    double            GetSize();
    double             make_ATR_SL(double price,ENUM_ORDER_TYPE type,double atr_value );
    double              make_ATR_TP(double price,ENUM_ORDER_TYPE type,double atr_value );
+   void writemsgContext(string prefix,string symbol);
+   CArrayObj* dealsToMessage();
    CICustomATR              *m_ATR;
+   
+   bool getFinalSessionDate(datetime in_dt,datetime& out_final_dt);
 protected:
    int               Dig;
    double            Points;
@@ -48,6 +54,7 @@ protected:
    double ticks;
    int magicNumber;
    int ATR_MAPeriod;
+   
 public:
                      CGuruEx03_Base();
         
@@ -55,8 +62,10 @@ public:
    bool              Init(int _magicNumber,string Pair,int slippage,double lot,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange);
    void              Deinit();
    bool              Validated();
-   bool              CheckEntry(bool buy_signal,bool sell_signal);
-   bool              writeTrade (datetime dt,string sSymbol,bool type,bool open_or_close,double volume,double sl,double tp,string comment);
+   bool             CheckEntry(bool buy_signal,bool sell_signal);
+   bool              rectangleCreate();
+   bool              writeTrade (MqlOutputMessageBase* msg,string extra);
+   
          static int        MathRandInt(const int,const int);
   bool LookForEntry_Random();
   };
@@ -67,15 +76,33 @@ public:
   }
 //+------------------------------------------------------------------+
 //| Constructor                                                     |
-//+------------------------------------------------------------------+
-CGuruEx03_Base::CGuruEx03_Base()
+//+------------------------------------------------------------------+.
+
+  bool CGuruEx03_Base:: writeTrade(MqlOutputMessageBase* msg,string extra)
+  {
+
+   string type = EnumToString(msg.getType());
+   string msg_out = (msg.getDT() +  ";" + msg.getSymbol() + ";" + type + ";" + DoubleToString(msg.getPrice()));
+   msg_out = msg_out + ";" + extra;
+   Print(" Preparing to write msg + " + msg_out);
+   return(objCSVDebug.writeMsg(msg_out));
+  } 
+CGuruEx03_Base::CGuruEx03_Base() 
 {
    m_Position = NULL;
    m_Profit = NULL;
   ticks = 0;
    m_Indis = NULL;
    Initialized = false;
+
 }
+
+   // File name (only if "Information output" == "The text file")
+//---
+int file_handle=0;
+//+------------------------------------------------------------------+
+//| Script program start function                                    |
+//+------------------------------------------------------------------+
 
 
    double     CGuruEx03_Base::make_ATR_SL(double price,ENUM_ORDER_TYPE type,double atr_value )
@@ -122,7 +149,8 @@ return((price+ATR_TPRange*factor*atr_value));
 
 bool CGuruEx03_Base::Init(int _magicNumber,string Pair,int slippage,double lot,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)
   {
-  // objsqlReporter = new sqlReporter(sStrategyName);
+
+
    m_Pair = Pair;
    ATR_MAPeriod = _ATR_MAPeriod;
 
@@ -160,7 +188,8 @@ void CGuruEx03_Base::Deinit()
 
      }
 
-
+if(objCSVDebug != NULL)
+   delete objCSVDebug;
   }
 
 //+------------------------------------------------------------------+
@@ -281,14 +310,38 @@ bool CGuruEx03_Base::Validated()
          {
             sell_signal = true;
          }   
-          return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal));
+          return(CheckEntry(buy_signal,sell_signal));
+         
   }
 //+------------------------------------------------------------------+
 //| Checks for entry to a trade - Exits previous trade also          |
 //+------------------------------------------------------------------+
+int u = 0;
+CArrayObj* CGuruEx03_Base::dealsToMessage()
+{
+   CArrayObj* msg_list = new CArrayObj();
+            ulong ticket = m_Trade.ResultDeal();
+               if(HistoryDealSelect(ticket))
+               {
+               
+         //--- time of deal execution in milliseconds since 01.01.1970
+                  long position_id = HistoryDealGetInteger(ticket,DEAL_POSITION_ID);
+                  long deal_time_msc=HistoryDealGetInteger(ticket,DEAL_TIME_MSC);
+                  ENUM_DEAL_TYPE type = HistoryDealGetInteger(ticket,DEAL_TYPE);
+                  ENUM_DEAL_REASON reason = HistoryDealGetInteger(ticket,DEAL_REASON);
+                  datetime DateTimeOpenLastOp = HistoryDealGetInteger(ticket, DEAL_TIME);
+              msg_list.Add(new MqlOutputMessageBase(position_id,DateTimeOpenLastOp,m_Symbol.Name(),type,reason,m_Trade.ResultBid()));
+                         
+                 }
+                             else
+                                 Alert("HistoryDealSelect() failed for #%d. Eror code=%d",
+                                    ticket,GetLastError());
+     Print("MSG SIZE IS  : "  + IntegerToString(msg_list.Total()) );                             
+     return msg_list;   // returns an array of messages            
+                     
+}
 bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
   {
-  
  //  double atr_value = 0;
      //atr_value = m_ATR.Main(0);
    if(!m_Symbol.RefreshRates())
@@ -305,20 +358,14 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
     GlobalVariableSet(sEquityVarName,equity);
      GlobalVariableSet(sPositioningVarName,positioning);
 
-  // m_Indis.Refresh();
- 
-
  
    
   if(buy_signal)
   {
 
-   if(OrderNumber > 0) // does an active position exist ? 
-        {
+   if(OrderNumber > 0) // does an active position exist ?       
          m_Trade.PositionClose(m_Pair);  // Close previous short order
-
-
-        }
+         
       if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_BUY, GetSize(), m_Symbol.Ask(),0,0))
         {
          OrderNumber = m_Trade.ResultOrder();
@@ -327,18 +374,15 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
          return(true);
         }
       else
-        {
          OrderNumber = 0;
-        }
+        
      }
    else
       if(sell_signal)
      {
       if(OrderNumber > 0) 
-           {
             m_Trade.PositionClose(m_Pair);  // Close previous long order
-          
-           }
+
          if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_SELL, GetSize(), m_Symbol.Bid(), 0,0))
            {
             OrderNumber = m_Trade.ResultOrder();
@@ -347,10 +391,14 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
             return(true);
            }
          else
-           {
             OrderNumber = 0;
-           }
+           
         }
    return(false);
   
-  }
+ } 
+  
+  
+  
+  
+

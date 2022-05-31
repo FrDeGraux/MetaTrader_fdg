@@ -11,8 +11,7 @@
  #include <Indicators\CiPosition.mqh>
 #include <Indicators\CiProfit_v3stepwip.mqh>
 #include <Arrays\ArrayObj.mqh>
-#include <sqlReporter.mqh>
-#include <CSVDebugger.mqh> 
+
 
 #include <Indicators\CICustomMA_Yellow.mqh>
 #include <Indicators\CICustomMA_White.mqh>
@@ -20,6 +19,7 @@
 #include <Indicators\Indicators.mqh>
 #include <Indicators\CICustomMA.mqh>
 #include <CGuru03_Base.mqh>
+#include <MqlOutputMessageMM.mqh>
 color InpColorFast = clrBlue;     
 color InpColorSlow = clrGreen;  
 class CGuruEx03_ThreeMM : public CGuruEx03_Base
@@ -27,11 +27,11 @@ class CGuruEx03_ThreeMM : public CGuruEx03_Base
   public :                   
                      CGuruEx03_ThreeMM(int slowPeriod,int mediumPeriod,int intFastPeriod,int hysterisis,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange);             // Constructor
                     ~CGuruEx03_ThreeMM() { Deinit(); }  // Destructor
-
+  bool writeTrade (CArrayObj* msg);
    void              Deinit();
    bool              InitIndicators();
    bool              Init(string Pair,int slippage,double lot,int magic);
-   bool              LookForEntry_StrategyCrossOver();
+   bool               LookForEntry_StrategyCrossOver();
 
    private : 
    CICustomMA_Yellow             *m_Fast;                    // Fast moving average indicator
@@ -48,7 +48,17 @@ int ATR_StopLossRange;
 int ATR_TPRange;
  };
 
-  
+    bool CGuruEx03_ThreeMM::writeTrade (CArrayObj* msg)
+    {
+   string Fast, Slow,Medium,Ravi;
+   Fast = DoubleToString(m_Fast.Main(0));
+   Slow = DoubleToString(m_Slow.Main(0));
+   Medium = DoubleToString(m_Medium.Main(0));
+   Ravi = DoubleToString(m_Profit.Main(0)); 
+   string extra = Fast + ";" + Medium + ";" + Slow + ";" + Ravi;
+   
+    return(CGuruEx03_Base::writeTrade(msg,extra));
+    }
  CGuruEx03_ThreeMM::CGuruEx03_ThreeMM(int slowPeriod,int mediumPeriod,int intFastPeriod,int hysterisis,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)
   {
  ATR_MAPeriod = _ATR_MAPeriod;
@@ -108,7 +118,7 @@ bool CGuruEx03_ThreeMM::InitIndicators()
       if ((m_Slow = new CICustomMA_Cyan ) == NULL) {
          Print("Error creating slow MA");
          return(false);
-      }
+      } 
    }
    if (!m_Slow.Create(m_Pair, 0, SlowPeriod, 0)) {   
       Print("Error initializing slow MA");
@@ -139,6 +149,7 @@ bool CGuruEx03_ThreeMM::InitIndicators()
 
  bool CGuruEx03_ThreeMM::LookForEntry_StrategyCrossOver()
     {   
+    CArrayObj* res = new CArrayObj();
     m_Indis.Refresh();
   double Fast_MA = m_Fast.Main(0);
    double Slow_MA = m_Slow.Main(0);
@@ -146,7 +157,7 @@ bool CGuruEx03_ThreeMM::InitIndicators()
       double Fast, Slow,Medium;
 
    if(!m_Symbol.RefreshRates())
-      return (false);
+      return false;
       
 
    if (!Checked) {
@@ -159,6 +170,10 @@ bool CGuruEx03_ThreeMM::InitIndicators()
    double hysteresis = Hysteresis * Points;
    bool buy_signal =   !Long && (Fast_MA > (Medium_MA + hysteresis))&& (Medium_MA > (Slow_MA + hysteresis));
    bool sell_signal =   Long && (Fast_MA < (Medium_MA - hysteresis))&& (Medium_MA < (Slow_MA - hysteresis));
+ //  buy_signal = true;
    return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal));
-    }
+
+
+
+   } 
     
