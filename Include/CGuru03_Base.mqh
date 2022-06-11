@@ -420,3 +420,4 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
   
   
   
+

@@ -19,9 +19,11 @@ datetime from_date;
 datetime to_date;
 };
 
-DealsRequester::DealsRequester(datetime _from_date,datetime _to_date,string ctx) : from_date(_from_date),to_date(_to_date)
+DealsRequester::DealsRequester(datetime _from_date,datetime _to_date,string ctx) : CSVDebugger(ctx)
 {
-init(ctx);
+from_date = _from_date;
+to_date= _to_date;
+writeHeaders();
 }
 void DealsRequester::writeHeaders()
 {
@@ -59,12 +61,6 @@ void DealsRequester::writeHeaders()
          
          
 }
-void DealsRequester::init(string ctx)
-  {
-CSVDebugger::init(ctx);
-writeHeaders();
-  }
-
 
 void DealsRequester::writeTradeHistory()
   {

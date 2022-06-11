@@ -11,11 +11,11 @@
 #define INITIAL_BUFFER_SIZE 2048
 //https://stackoverflow.com/questions/52769369/mql5-pass-indicator-as-parameter
 #include <MqlParams.mqh>
-
+#include <Indicators\Indicators.mqh>
 class CICustomATR : public CiCustom
   {
 private:
-
+                     
 public:
                      CICustomATR();
                     ~CICustomATR();
@@ -25,13 +25,17 @@ public:
                               const ENUM_TIMEFRAMES period, 
                               const int num_params, 
                               const MqlParam &params[]);
-
+                            
+private : 
+   CiATR              *m_ATR;
   }; 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 CICustomATR::CICustomATR()
   {
+     
+
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -42,16 +46,33 @@ CICustomATR::~CICustomATR()
 //+------------------------------------------------------------------+
 double CICustomATR::Main(const int index) const
   {
-   CIndicatorBuffer *buffer=At(0);
-//--- check
+   CIndicatorBuffer *buffer=At(index);
+
    if(buffer==NULL) 
       return(EMPTY_VALUE);
-//---
-   return(buffer.At(index));
+   double atr_value = buffer.At(index);
+      
+   
+
+   return(atr_value);
   }
 //+---
 bool CICustomATR::Create(  string symbol,ENUM_TIMEFRAMES tf,int ExtPeriodATR,int AtrMultiplier_SL,int AtrMultiplier_TP) 
 {
+      m_ATR = NULL;
+   if(m_ATR == NULL)
+     {
+      if((m_ATR = new CiATR) == NULL)
+        {
+         Print("Error creating CiATR");
+         return false;
+        }
+     }
+   if(!m_ATR.Create(symbol, 0,ExtPeriodATR))
+     {
+      Print("Error initializing CiATR");
+      return false;
+      }
    // #1 Setup the MQL params array for the custom indicator.
    CMqlParams params;
 
@@ -83,11 +104,12 @@ bool CICustomATR::Initialize(const string symbol,
                               const ENUM_TIMEFRAMES period, 
                               const int num_params, 
                               const MqlParam &params[]
-) {
+) 
+{
    // #1 Specify if this indicator redraws
    this.Redrawer(true);
    // #2 Specify the number of indicator buffers to be used. 
-   if (!this.NumBuffers(3))
+   if (!this.NumBuffers(6))
       return false; 
    // #3 Call super.Initialize 
    if (!CiCustom::Initialize(symbol, period, num_params, params))
