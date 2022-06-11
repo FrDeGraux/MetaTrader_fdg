@@ -26,8 +26,8 @@ public:
                               const int num_params, 
                               const MqlParam &params[]);
                             
-private : 
-   CiATR              *m_ATR;
+
+
   }; 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -59,20 +59,7 @@ double CICustomATR::Main(const int index) const
 //+---
 bool CICustomATR::Create(  string symbol,ENUM_TIMEFRAMES tf,int ExtPeriodATR,int AtrMultiplier_SL,int AtrMultiplier_TP) 
 {
-      m_ATR = NULL;
-   if(m_ATR == NULL)
-     {
-      if((m_ATR = new CiATR) == NULL)
-        {
-         Print("Error creating CiATR");
-         return false;
-        }
-     }
-   if(!m_ATR.Create(symbol, 0,ExtPeriodATR))
-     {
-      Print("Error initializing CiATR");
-      return false;
-      }
+ 
    // #1 Setup the MQL params array for the custom indicator.
    CMqlParams params;
 

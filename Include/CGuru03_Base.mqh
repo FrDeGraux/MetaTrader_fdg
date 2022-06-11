@@ -33,7 +33,7 @@ private:
    bool useStopTP;
    CSVDebugger* debugger;
 
-   double getATR();
+ 
    bool getFinalSessionDate(datetime in_dt,datetime& out_final_dt);
 protected:
    int               Dig;
