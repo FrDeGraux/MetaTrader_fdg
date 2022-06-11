@@ -16,10 +16,13 @@
 #include <Indicators\CICustomMA.mqh>
 #include <Indicators\CICustomATR.mqh>
 #include <CSVDebugger.mqh> 
+#include "TradeEnhanced.mqh"
 #include <MqlOutputMessageBase.mqh>
 class CGuruEx03_Base : CArrayObj
   { 
 private:
+
+   CTradeEnhanced  m_Trade;  
    CSVDebugger* objCSVDebug;
    double ATR_StopLossRange;
    double ATR_TPRange;
@@ -27,10 +30,10 @@ private:
    double            GetSize();
    double             make_ATR_SL(double price,ENUM_ORDER_TYPE type,double atr_value );
    double              make_ATR_TP(double price,ENUM_ORDER_TYPE type,double atr_value );
-   void writemsgContext(string prefix,string symbol);
-   CArrayObj* dealsToMessage();
-   CICustomATR              *m_ATR;
-   
+   bool useStopTP;
+   CSVDebugger* debugger;
+
+   double getATR();
    bool getFinalSessionDate(datetime in_dt,datetime& out_final_dt);
 protected:
    int               Dig;
@@ -39,7 +42,7 @@ protected:
    bool              Long;
    bool              InitIndicators();
    string            m_Pair;                    // Currency pair to trade
-   CTrade            m_Trade;                   // Trading object
+                  // Trading object
    CSymbolInfoCustom       m_Symbol;                  // Symbol info object
    // Indicators
    CIndicators       *m_Indis;                   // Indicator collection for fast recalculations
@@ -54,18 +57,19 @@ protected:
    double ticks;
    int magicNumber;
    int ATR_MAPeriod;
+   void writeDebugMsg(string msg);
    
 public:
                      CGuruEx03_Base();
-        
+                  
                     ~CGuruEx03_Base() { Deinit(); }  // Destructor
-   bool              Init(int _magicNumber,string Pair,int slippage,double lot,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange);
+   bool              Init(int _magicNumber,string Pair,int slippage,double lot,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,bool useStopTP,CSVDebugger* _debugger);
    void              Deinit();
    bool              Validated();
    bool             CheckEntry(bool buy_signal,bool sell_signal);
    bool              rectangleCreate();
    bool              writeTrade (MqlOutputMessageBase* msg,string extra);
-   
+      CICustomATR              *m_ATR;
          static int        MathRandInt(const int,const int);
   bool LookForEntry_Random();
   };
@@ -78,15 +82,11 @@ public:
 //| Constructor                                                     |
 //+------------------------------------------------------------------+.
 
-  bool CGuruEx03_Base:: writeTrade(MqlOutputMessageBase* msg,string extra)
-  {
+void CGuruEx03_Base::writeDebugMsg(string msg)
+{
+   debugger.writeMsg(m_Symbol.Name() + ";" + msg);
+}
 
-   string type = EnumToString(msg.getType());
-   string msg_out = (msg.getDT() +  ";" + msg.getSymbol() + ";" + type + ";" + DoubleToString(msg.getPrice()));
-   msg_out = msg_out + ";" + extra;
-   Print(" Preparing to write msg + " + msg_out);
-   return(objCSVDebug.writeMsg(msg_out));
-  } 
 CGuruEx03_Base::CGuruEx03_Base() 
 {
    m_Position = NULL;
@@ -147,10 +147,11 @@ return((price+ATR_TPRange*factor*atr_value));
 //| Performs system initialisation                                   |
 //+------------------------------------------------------------------+
 
-bool CGuruEx03_Base::Init(int _magicNumber,string Pair,int slippage,double lot,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)
+bool CGuruEx03_Base::Init(int _magicNumber,string Pair,int slippage,double lot,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,bool _useStopTP,CSVDebugger* _debugger)
   {
 
-
+   debugger = _debugger;
+   useStopTP = _useStopTP;
    m_Pair = Pair;
    ATR_MAPeriod = _ATR_MAPeriod;
 
@@ -169,7 +170,15 @@ bool CGuruEx03_Base::Init(int _magicNumber,string Pair,int slippage,double lot,i
    InitIndicators();
 
    Initialized = true;
+   #define        WIDTH  800     // Image width to call ChartScreenShot()
+#define        HEIGHT 600     // Image height to call ChartScreenShot()
+   string name=_Symbol+TimeToString(TimeCurrent())+".PNG"; 
+   Print("File Name is ",name);
 
+   StringReplace(name,":"," ");
+
+   if(!ChartScreenShot(0,name,800,600))
+      Print("ScreenShot failed ");
    return(true);
   }
 
@@ -178,6 +187,8 @@ bool CGuruEx03_Base::Init(int _magicNumber,string Pair,int slippage,double lot,i
 //+------------------------------------------------------------------+
 void CGuruEx03_Base::Deinit()
   {
+    if(debugger != NULL)
+      delete debugger;
    if(m_Indis != NULL)
      {
       delete m_Indis;
@@ -297,10 +308,11 @@ bool CGuruEx03_Base::Validated()
 //+------------------------------------------------------------------+
   bool CGuruEx03_Base::LookForEntry_Random()
   {
-           double   signal_rd = MathRandInt(0,1000);
+            m_Indis.Refresh();
+           double   signal_rd = MathRandInt(0,3);
            bool buy_signal = false;
            bool sell_signal = false;
-           
+    
          ticks = ticks + 1;
          if (MathCeil(signal_rd) == 1)
          {
@@ -317,35 +329,14 @@ bool CGuruEx03_Base::Validated()
 //| Checks for entry to a trade - Exits previous trade also          |
 //+------------------------------------------------------------------+
 int u = 0;
-CArrayObj* CGuruEx03_Base::dealsToMessage()
-{
-   CArrayObj* msg_list = new CArrayObj();
-            ulong ticket = m_Trade.ResultDeal();
-               if(HistoryDealSelect(ticket))
-               {
-               
-         //--- time of deal execution in milliseconds since 01.01.1970
-                  long position_id = HistoryDealGetInteger(ticket,DEAL_POSITION_ID);
-                  long deal_time_msc=HistoryDealGetInteger(ticket,DEAL_TIME_MSC);
-                  ENUM_DEAL_TYPE type = HistoryDealGetInteger(ticket,DEAL_TYPE);
-                  ENUM_DEAL_REASON reason = HistoryDealGetInteger(ticket,DEAL_REASON);
-                  datetime DateTimeOpenLastOp = HistoryDealGetInteger(ticket, DEAL_TIME);
-              msg_list.Add(new MqlOutputMessageBase(position_id,DateTimeOpenLastOp,m_Symbol.Name(),type,reason,m_Trade.ResultBid()));
-                         
-                 }
-                             else
-                                 Alert("HistoryDealSelect() failed for #%d. Eror code=%d",
-                                    ticket,GetLastError());
-     Print("MSG SIZE IS  : "  + IntegerToString(msg_list.Total()) );                             
-     return msg_list;   // returns an array of messages            
-                     
-}
+
 bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
   {
  //  double atr_value = 0;
      //atr_value = m_ATR.Main(0);
    if(!m_Symbol.RefreshRates())
       return (false);
+
    double price = iOpen(m_Symbol.Name(),Period(),0);
 
  double equity = m_Symbol.computeSymbolEquity();
@@ -356,43 +347,71 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
     string sPositioningVarName = m_Symbol.Name() + "_netPositioning";
   
     GlobalVariableSet(sEquityVarName,equity);
-     GlobalVariableSet(sPositioningVarName,positioning);
-
- 
+    GlobalVariableSet(sPositioningVarName,positioning);
    
+   double sl = 0;
+   double tp = 0;
+   //double ATR = iATR(NULL, 0, ATR_MAPeriod);
   if(buy_signal)
   {
 
-   if(OrderNumber > 0) // does an active position exist ?       
-         m_Trade.PositionClose(m_Pair);  // Close previous short order
-         
-      if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_BUY, GetSize(), m_Symbol.Ask(),0,0))
+   if(OrderNumber > 0) // does an active position exist ?   
+      {
+   //         this.writeDebugMsg(" Closing order " + StringToInteger(OrderNumber));
+            m_Trade.PositionClose(m_Pair);  // Close previous short order
+      }  
+      if(useStopTP)
+      {
+          sl=   m_ATR.Main(1);
+          tp =    m_ATR.Main(2);
+      }
+      
+      
+  
+        
+      if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_BUY, GetSize(), m_Symbol.Ask(),sl,tp))
         {
+         double price = m_Trade.ResultPrice();
+         
          OrderNumber = m_Trade.ResultOrder();
+     //       this.writeDebugMsg(" Opening order " + StringToInteger(OrderNumber));
          Long = true;
   
          return(true);
         }
       else
+      {
+   //      this.writeDebugMsg(" Failed to open order");
          OrderNumber = 0;
-        
-     }
+      } 
+     
+   }
    else
       if(sell_signal)
      {
       if(OrderNumber > 0) 
-            m_Trade.PositionClose(m_Pair);  // Close previous long order
+         {
+      //   this.writeDebugMsg(" Closing order " + StringToInteger(OrderNumber));
+          m_Trade.PositionClose(m_Pair);  // Close previous long order
+         }
+       if(useStopTP)
+      {
+          sl=   m_ATR.Main(0);
+          tp =    m_ATR.Main(3);
+      }  
 
-         if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_SELL, GetSize(), m_Symbol.Bid(), 0,0))
+         if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_SELL, GetSize(), m_Symbol.Bid(), sl,tp))
            {
             OrderNumber = m_Trade.ResultOrder();
-
+            // this.writeDebugMsg(" Opening order " + StringToInteger(OrderNumber));
             Long = false;
             return(true);
            }
          else
+         {
+            this.writeDebugMsg("Failed to open order");
             OrderNumber = 0;
-           
+          } 
         }
    return(false);
   
@@ -401,4 +420,3 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
   
   
   
-

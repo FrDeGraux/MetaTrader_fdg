@@ -30,7 +30,7 @@ class CGuruEx03_ThreeMM : public CGuruEx03_Base
   bool writeTrade (CArrayObj* msg);
    void              Deinit();
    bool              InitIndicators();
-   bool              Init(string Pair,int slippage,double lot,int magic);
+   bool              Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger);
    bool               LookForEntry_StrategyCrossOver();
 
    private : 
@@ -74,9 +74,9 @@ ATR_TPRange = _ATR_TPRange;
     FastPeriod = intFastPeriod;
     Hysteresis = hysterisis;
   }
-   bool CGuruEx03_ThreeMM::Init(string Pair,int slippage,double lot,int magic)
+   bool CGuruEx03_ThreeMM::Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger)
    {
-     if(!CGuruEx03_Base::Init(magic,Pair,slippage,lot,ATR_MAPeriod,ATR_StopLossRange,ATR_TPRange))
+     if(!CGuruEx03_Base::Init(magic,Pair,slippage,lot,ATR_MAPeriod,ATR_StopLossRange,ATR_TPRange,useSLTP,_debugger))
          Print(" CGuruEx03_ThreeMM " + " unable to initiate");
      return(InitIndicators());
    }
@@ -154,6 +154,7 @@ bool CGuruEx03_ThreeMM::InitIndicators()
   double Fast_MA = m_Fast.Main(0);
    double Slow_MA = m_Slow.Main(0);
   double Medium_MA = m_Medium.Main(0);
+  
       double Fast, Slow,Medium;
 
    if(!m_Symbol.RefreshRates())

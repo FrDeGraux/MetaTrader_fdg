@@ -33,7 +33,7 @@ return sTime;
 }
 void CSVDebugger::init(string ctx)
 {
-   this.filename = buildFileName() + ".csv" ; 
+   this.filename = ctx + "_" + buildFileName() + ".csv" ; 
    this.handleFile = FileOpen(this.filename,FILE_CSV|FILE_READ|FILE_WRITE, ',');
    if(this.handleFile > 0)
        Print("File " + this.filename + " is opened");
@@ -42,7 +42,10 @@ CSVDebugger::CSVDebugger()
 {
 
 }
-
+CSVDebugger::CSVDebugger(string ctx)
+{
+init(ctx);
+}
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -54,7 +57,7 @@ CSVDebugger::~CSVDebugger()
 //+------------------------------------------------------------------+
 bool CSVDebugger::writeMsg(string msg)
 {
-      Print("going to write msg : " + msg);
+
       return(FileWrite(this.handleFile,msg) > 0);
     
 }

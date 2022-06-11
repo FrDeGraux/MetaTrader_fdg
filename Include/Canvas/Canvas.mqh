@@ -252,6 +252,7 @@ bool CCanvas::Create(const string name,const int width,const int height,ENUM_COL
      {
       //--- generate resource name
       m_rcname="::"+name+(string)ChartID()+(string)(GetTickCount()+MathRand());
+      m_rcname="::"+name+(string)(GetTickCount()+MathRand());
       //--- initialize data with zeros
       ArrayInitialize(m_pixels,0);
       //--- create dynamic resource
