@@ -9,36 +9,40 @@
 #include <Trade\SymbolInfo.mqh>
 #include <Trade\DealInfo.mqh>
 #include <Trade\PositionInfo.mqh>
-  #include <Arrays\ArrayDouble.mqh>
+#include <Arrays\ArrayDouble.mqh>
 class CSymbolInfoCustom : public CSymbolInfo
   {
 private:
-CArrayDouble* cumulated_balance;   
-CArrayDouble* cumulated_equity;   
-string         sGlobalBalanceVarNameBalance;
-double         balance;
+   CArrayDouble*     cumulated_balance;
+   CArrayDouble*     cumulated_equity;
+   string            sGlobalBalanceVarNameBalance;
+   double            balance;
 
 public:
                      CSymbolInfoCustom();
                     ~CSymbolInfoCustom();
-                    double computeSymbolBalance();
-                    double computeSymbolBalance_v2();
-                    double computeSymbolEquity();
-                    double         computeSymbolFloatingEquity();
-                    double computeNetPositioning();
-                    void addInitialBalance();
+   double            computeSymbolBalance();
+   double            computeSymbolBalance_v2();
+   double            computeSymbolEquity();
+   double            computeSymbolFloatingEquity();
+   double            computeNetPositioning();
+   void              addInitialBalance();
+   int               nProcessedDeals;
   };
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 CSymbolInfoCustom::CSymbolInfoCustom()
   {
-    cumulated_balance = new CArrayDouble();
-    cumulated_equity = new CArrayDouble();
-    cumulated_equity.Add(0);
-
-    sGlobalBalanceVarNameBalance = Name()  + "_balance";
+   cumulated_balance = new CArrayDouble();
+   cumulated_equity = new CArrayDouble();
+   cumulated_equity.Add(0);
+   int nProcessedDeals = 0;
+   sGlobalBalanceVarNameBalance = Name()  + "_balance";
 
   }
 //+------------------------------------------------------------------+
@@ -49,23 +53,29 @@ CSymbolInfoCustom::~CSymbolInfoCustom()
   }
 //+------------------------------------------------------------------+
 void CSymbolInfoCustom::addInitialBalance()
-{
+  {
    if(cumulated_balance.Total() == 0)
-   {
+     {
       if(GlobalVariableCheck("initial_balance"))
          cumulated_balance.Add(GlobalVariableGet("initial_balance"));
-   }
-}
+     }
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 double CSymbolInfoCustom::computeSymbolEquity()
-{
- 
+  {
 
-balance = computeSymbolBalance();
-double res = balance + computeSymbolFloatingEquity();
-return res;
-}
+
+   balance = computeSymbolBalance();
+   double res = balance + computeSymbolFloatingEquity();
+   return res;
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 double CSymbolInfoCustom::computeNetPositioning()
-{
+  {
 // Balance is realized, equity is floating one
 
 
@@ -75,40 +85,43 @@ double CSymbolInfoCustom::computeNetPositioning()
    if(pos_total == 0)
       return 0;
    double new_positioning = 0;
-        for(int i=0; i<pos_total; i++)
+   for(int i=0; i<pos_total; i++)
      {
-            CPositionInfo m_position_info;
-            string msg_base  =Name() +  "_POSITION_" + IntegerToString(i) ;
-                 if(!m_position_info.SelectByIndex(i))
-                 {
-                  Print("Unable to select position " + IntegerToString(i));
-                     continue;
-                 }
-            string s1 = m_position_info.Symbol();
-            string s2 = Name();
-            
-            if(m_position_info.Symbol()==Name())
-            {
-               int factor;
-            if(m_position_info.PositionType() == POSITION_TYPE_BUY)
-               factor = 1;
-            if(m_position_info.PositionType() == POSITION_TYPE_SELL)
-               factor = -1;
-                new_positioning = new_positioning +factor*m_position_info.Volume();
-              
-                msg = msg_base + " ( " + m_position_info.Symbol() + " ) " + " : new Positioning is : " + DoubleToString(new_positioning);
-            }
-               //--- Show a trade in the balance with this symbol. Consider swap and commission
+      CPositionInfo m_position_info;
+      string msg_base  =Name() +  "_POSITION_" + IntegerToString(i) ;
+      if(!m_position_info.SelectByIndex(i))
+        {
+         Print("Unable to select position " + IntegerToString(i));
+         continue;
+        }
+      string s1 = m_position_info.Symbol();
+      string s2 = Name();
 
-            //--- Otherwise, write the previous value
+      if(m_position_info.Symbol()==Name())
+        {
+         int factor;
+         if(m_position_info.PositionType() == POSITION_TYPE_BUY)
+            factor = 1;
+         if(m_position_info.PositionType() == POSITION_TYPE_SELL)
+            factor = -1;
+         new_positioning = new_positioning +factor*m_position_info.Volume();
 
-             //  Print(msg);
+         msg = msg_base + " ( " + m_position_info.Symbol() + " ) " + " : new Positioning is : " + DoubleToString(new_positioning);
+        }
+      //--- Show a trade in the balance with this symbol. Consider swap and commission
+
+      //--- Otherwise, write the previous value
+
+      //  Print(msg);
      }
-     return new_positioning;
-     
-}
+   return new_positioning;
+
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 double CSymbolInfoCustom::computeSymbolFloatingEquity()
-{
+  {
 // Balance is realized, equity is floating one
 
 
@@ -118,170 +131,101 @@ double CSymbolInfoCustom::computeSymbolFloatingEquity()
    if(pos_total == 0)
       return 0;
    double new_equity = 0;
-        for(int i=0; i<pos_total; i++)
+   for(int i=0; i<pos_total; i++)
      {
-            CPositionInfo m_position_info;
-            string msg_base  =Name() +  "_POSITION_" + IntegerToString(i) ;
-                 if(!m_position_info.SelectByIndex(i))
-                 {
-                  Print("Unable to select position " + IntegerToString(i));
-                     continue;
-                 }
-            string s1 = m_position_info.Symbol();
-            string s2 = Name();
-            
-            if(m_position_info.Symbol()==Name() && m_position_info.Profit()!=0)
-            {
-                new_equity = new_equity +m_position_info.Profit()+m_position_info.Swap()+m_position_info.Commission();
-               cumulated_equity.Add(new_equity);
-                msg = msg_base + " ( " + m_position_info.Symbol() + " ) " + " : new equity is : " + DoubleToString(new_equity);
-            }
-               //--- Show a trade in the balance with this symbol. Consider swap and commission
+      CPositionInfo m_position_info;
+      string msg_base  =Name() +  "_POSITION_" + IntegerToString(i) ;
+      if(!m_position_info.SelectByIndex(i))
+        {
+         Print("Unable to select position " + IntegerToString(i));
+         continue;
+        }
+      string s1 = m_position_info.Symbol();
+      string s2 = Name();
 
-            //--- Otherwise, write the previous value
+      if(m_position_info.Symbol()==Name() && m_position_info.Profit()!=0)
+        {
+         new_equity = new_equity +m_position_info.Profit()+m_position_info.Swap()+m_position_info.Commission();
+         cumulated_equity.Add(new_equity);
+         msg = msg_base + " ( " + m_position_info.Symbol() + " ) " + " : new equity is : " + DoubleToString(new_equity);
+        }
+      //--- Show a trade in the balance with this symbol. Consider swap and commission
 
-             //  Print(msg);
+      //--- Otherwise, write the previous value
+
+      //  Print(msg);
      }
-     return new_equity;
-     
-}
+   return new_equity;
+
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 double CSymbolInfoCustom::computeSymbolBalance()
-{
+  {
 // Balance is realized, equity is floating one
-// @ epoch t, balance 
-addInitialBalance();
+// @ epoch t, balance
+   addInitialBalance();
 //--- Find out the number of deals
    ::HistorySelect(0,LONG_MAX);
 //--- Find out the numberof deals
    int deals_total=::HistoryDealsTotal();
    string msg = "";
-   
-  int processed_deals_already = GlobalVariableGet("processed_deals"); // total_number_of_processed deals
-     for(int i=processed_deals_already; i<deals_total; i++) //  New deals
+
+   int processed_deals_already = nProcessedDeals;
+   for(int i=processed_deals_already; i<deals_total; i++) //  New deals
      {
- // DEAL_1 is the empty one
- // DEAL_2
-               CDealInfo m_deal_info;
-              string s1 = m_deal_info.Symbol();
-             string s2 = Name();
-             int type = m_deal_info.DealType();
-               if(!m_deal_info.SelectByIndex(i))
-                         continue;
-            string msg_base  =Name() +  "_DEAL_" + IntegerToString(i) ;
-             if(m_deal_info.Symbol()!=Name() && (m_deal_info.DealType()!=DEAL_TYPE_BALANCE))
-                continue;
-             
-          
-                 if(!m_deal_info.SelectByIndex(i))
-                 {
-                  Print("Unabrzle to select deal " + IntegerToString(i));
-                     continue;
-                 }
-                      
-            if(m_deal_info.Symbol()==Name() && m_deal_info.Profit()!=0)
-            {
-               double new_balance = cumulated_balance.At(cumulated_balance.Total()-1) +m_deal_info.Profit()+m_deal_info.Swap()+m_deal_info.Commission();
-               cumulated_balance.Add(new_balance);
-                msg = msg_base + " ( " + m_deal_info.Symbol() + " ) " + " : new balance is : " + DoubleToString(new_balance);
-                             int processed_deals = GlobalVariableGet("processed_deals");
-                             GlobalVariableSet("processed_deals",processed_deals+1);
-            }
-            
-          else
-              {
+      // DEAL_1 is the empty one
+      // DEAL_2
+      CDealInfo m_deal_info;
+      string s1 = m_deal_info.Symbol();
+      string s2 = Name();
+      int type = m_deal_info.DealType();
+      if(!m_deal_info.SelectByIndex(i))
+        {
+         Print("Unabrzle to select deal " + IntegerToString(i));
+         continue;
+        }
 
-                     if(m_deal_info.DealType()==DEAL_TYPE_BALANCE)
-                     {
-                           double new_balance = AccountInfoDouble(ACCOUNT_BALANCE);
-                              cumulated_balance.Add(new_balance);
-                             msg =  msg_base + " ( deal Symbol is :   " + m_deal_info.Symbol() + " ) " + " : Initial Balancing is : " + DoubleToString(new_balance);
-                             GlobalVariableSet("initial_balance",new_balance);
-                             int processed_deals = GlobalVariableGet("processed_deals");
-                             GlobalVariableSet("processed_deals",processed_deals+1);
-                          
-                     }
-                     
-            
-              
-              }
-               Print(msg);
-               msg = "";
-     }
- 
-     return cumulated_balance.At(cumulated_balance.Total()-1);
-     
-}
+      if(m_deal_info.Symbol()!=Name() && (m_deal_info.DealType()!=DEAL_TYPE_BALANCE))
+         continue;
 
-double CSymbolInfoCustom::computeSymbolBalance_v2()
-{
-// compute the Balance only for the current Symbol
-// filter on all Symbol Deals, and compute their balance
-   ::HistorySelect(0,LONG_MAX);
-//--- Find out the numberof deals
-   int deals_total=::HistoryDealsTotal();
-   string msg = "";
-   if(deals_total > 1) 
-      string s ="";
-   int dealnumberSymbol = 0;
-     for(int i=0; i<deals_total; i++)
-     {
-               CDealInfo m_deal_info;
-               if(!m_deal_info.SelectByIndex(i))
-                         continue;
-              if(m_deal_info.Symbol()!=Name() && m_deal_info.Symbol() != "")
-              {
-                        string one = m_deal_info.Symbol();
-                        string two = Name();
-                        if(one != two) 
-                           Print("hello");
-                        continue;      
-                 } 
-                dealnumberSymbol= dealnumberSymbol+1;
-            string msg_base  =Name() +  "_DEAL_" + IntegerToString(dealnumberSymbol) ;
+      if(m_deal_info.DealType()==DEAL_TYPE_BALANCE)
+        {
+         double new_balance = AccountInfoDouble(ACCOUNT_BALANCE);
+         cumulated_balance.Add(new_balance);
 
-            if(m_deal_info.Symbol()==Name() && m_deal_info.Profit()!=0)
-            {
-              double pi =  m_deal_info.Profit();
-               Print(" Magic of the deal " + DoubleToString(m_deal_info.Magic()));
-               double new_balance = cumulated_balance.At(cumulated_balance.Total()-1) +m_deal_info.Profit()+m_deal_info.Swap()+m_deal_info.Commission();
-               cumulated_balance.Add(new_balance);
-                string msg_one = msg_base + " ( " + m_deal_info.Symbol() + " ) " + " : old balance is : " + DoubleToString(cumulated_balance.At(cumulated_balance.Total()-1));
-                msg = msg_one + " ; " + msg_base + " ( " + m_deal_info.Symbol() + " ) " + " : new balance is : " + DoubleToString(new_balance);
-            }
-               //--- Show a trade in the balance with this symbol. Consider swap and commission
+         GlobalVariableSet("initial_balance",new_balance);
 
-            //--- Otherwise, write the previous value
-            else
-              {
+         nProcessedDeals = nProcessedDeals+1;
 
-               if(m_deal_info.DealType()==DEAL_TYPE_BALANCE)
-               {
-                     double new_balance = AccountInfoDouble(ACCOUNT_BALANCE);
-                        cumulated_balance.Add(new_balance);
-                       msg =  msg_base + " ( deal Symbol is :   " + m_deal_info.Symbol() + " ) " + " : Initial Balancing is : " + DoubleToString(new_balance);
-               }
-               
-               //--- Otherwise, write the previous value to the current index
-               else
-               {
-               // other symbols
-               // may be uneeded
-                /*
-                    double new_balance = cumulated_balance.At(cumulated_balance.Total()-1);
-                                   msg = msg_base + " ( deal Symbol is : " + m_deal_info.Symbol() + " ) " + " : Reported Balancing is : " + DoubleToString(new_balance);
-                      cumulated_balance.Add(new_balance);
-                      */
-                      int x = 1;
-               }
-              
-              }
-                Print(msg);
+        }
+
+
+      else
+        {
+         if(m_deal_info.Symbol()==Name() && m_deal_info.Profit()!=0)
+           {
+            double new_balance = cumulated_balance.At(cumulated_balance.Total()-1) +m_deal_info.Profit()+m_deal_info.Swap()+m_deal_info.Commission();
+            cumulated_balance.Add(new_balance);
+            nProcessedDeals = nProcessedDeals+1;
+           }
+        }
+
 
      }
-     double toExport = cumulated_balance.At(cumulated_balance.Total()-1);
-     return cumulated_balance.At(cumulated_balance.Total()-1);
-     
-     
-     
-     
-}
+
+
+
+
+  
+
+return cumulated_balance.At(cumulated_balance.Total()-1);
+
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+

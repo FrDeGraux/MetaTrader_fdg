@@ -10,6 +10,8 @@
 #define INITIAL_BUFFER_SIZE 2048
 //https://stackoverflow.com/questions/52769369/mql5-pass-indicator-as-parameter
 #include <MqlParams.mqh>
+#include <expstatistics_class.mqh>
+input int ExtVolBackWards =  7;
 enum enMaTypes
 {
    ma_sma,    // Simple moving average
@@ -20,11 +22,13 @@ enum enMaTypes
 class CICustomMA : public CiCustom
   {
 private:
-
+                  int MAPeriod;
 public:
                      CICustomMA();
                     ~CICustomMA();
                     double            Main(const int index) const;
+                    double computeVolatility();
+                    double computeATR();
                     bool Create(  string symbol, 
                             ENUM_TIMEFRAMES tf, string ind_name,
                             int MAPeriod, 
@@ -46,8 +50,26 @@ CICustomMA::CICustomMA()
 //+------------------------------------------------------------------+
 CICustomMA::~CICustomMA()
   {
-  }
+  } 
 //+------------------------------------------------------------------+
+
+   double CICustomMA::computeVolatility()
+   {
+ 
+  CIndicatorBuffer* buffer = At(0);
+double values[];
+ArrayResize(values,MathMin(buffer.Total(),ExtVolBackWards));
+  for (int i=0 ; i < MathMin(buffer.Total(),ExtVolBackWards) ; i++) 
+      ArrayFill(values,0,1,this.Main(i));
+ CExpStatistics objStat = CExpStatistics();
+ int size = 0;
+ objStat.setArrays(true,values,size);  
+ return(MathSqrt(objStat.Moment(2,true,0,0)));
+  
+      
+   }
+//+------------------------------------------------------------------+
+    
 double CICustomMA::Main(const int index) const
   {
    CIndicatorBuffer *buffer=At(0);
@@ -60,9 +82,10 @@ double CICustomMA::Main(const int index) const
 //+---
 bool CICustomMA::Create(  string symbol, 
                             ENUM_TIMEFRAMES tf,string ind_Name, 
-                            int MAPeriod, 
+                            int _MAPeriod, 
                             enMaTypes inpMaMethod) 
-{
+{  
+   MAPeriod=  _MAPeriod;
    // #1 Setup the MQL params array for the custom indicator.
    CMqlParams params;
    params.Set(ind_Name, TYPE_STRING)

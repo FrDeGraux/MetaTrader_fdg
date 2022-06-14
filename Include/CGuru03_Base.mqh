@@ -149,7 +149,7 @@ return((price+ATR_TPRange*factor*atr_value));
 
 bool CGuruEx03_Base::Init(int _magicNumber,string Pair,int slippage,double lot,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,bool _useStopTP,CSVDebugger* _debugger)
   {
-
+   OrderNumber = 0;
    debugger = _debugger;
    useStopTP = _useStopTP;
    m_Pair = Pair;
@@ -173,12 +173,10 @@ bool CGuruEx03_Base::Init(int _magicNumber,string Pair,int slippage,double lot,i
    #define        WIDTH  800     // Image width to call ChartScreenShot()
 #define        HEIGHT 600     // Image height to call ChartScreenShot()
    string name=_Symbol+TimeToString(TimeCurrent())+".PNG"; 
-   Print("File Name is ",name);
+
 
    StringReplace(name,":"," ");
 
-   if(!ChartScreenShot(0,name,800,600))
-      Print("ScreenShot failed ");
    return(true);
   }
 
@@ -309,7 +307,7 @@ bool CGuruEx03_Base::Validated()
   bool CGuruEx03_Base::LookForEntry_Random()
   {
             m_Indis.Refresh();
-           double   signal_rd = MathRandInt(0,3);
+           double   signal_rd = MathRandInt(0,7);
            bool buy_signal = false;
            bool sell_signal = false;
     
@@ -359,6 +357,7 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
       {
    //         this.writeDebugMsg(" Closing order " + StringToInteger(OrderNumber));
             m_Trade.PositionClose(m_Pair);  // Close previous short order
+            int y = 1;
       }  
       if(useStopTP)
       {
@@ -393,6 +392,7 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
          {
       //   this.writeDebugMsg(" Closing order " + StringToInteger(OrderNumber));
           m_Trade.PositionClose(m_Pair);  // Close previous long order
+           int y = 1;
          }
        if(useStopTP)
       {
