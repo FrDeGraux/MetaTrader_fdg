@@ -26,8 +26,8 @@ private :
 string buildFileName()
 {
 string sTime = TimeToString(TimeCurrent(),TIME_DATE|TIME_MINUTES );
-StringReplace(sTime,".",'_');
-StringReplace(sTime,":",'_');
+StringReplace(sTime,".","_");
+StringReplace(sTime,":","_");
 
 return sTime;
 }

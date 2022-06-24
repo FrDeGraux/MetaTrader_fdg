@@ -7,8 +7,13 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #include "Custom.mqh"
+
 #define INDICATOR_NAME "ProfitValue iFish"
+
 #define INITIAL_BUFFER_SIZE 2048
+
+//https
+
 //https://stackoverflow.com/questions/52769369/mql5-pass-indicator-as-parameter
 #include <MqlParams.mqh>
 

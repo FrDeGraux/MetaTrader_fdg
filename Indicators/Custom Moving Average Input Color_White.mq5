@@ -3,25 +3,50 @@
 //|                   Copyright 2009-2017, MetaQuotes Software Corp. |
 //|                                              http://www.mql5.com |
 //+------------------------------------------------------------------+
+#define SHOW_CHART
 #property copyright "2009-2017, MetaQuotes Software Corp."
 #property link      "http://www.mql5.com"
 #property version   "1.001"
 //--- indicator settings
+#ifdef SHOW_CHART
 #property indicator_chart_window
+#endif
 #property indicator_buffers 1
 #property indicator_plots   1
 #property indicator_type1   DRAW_LINE
-#property indicator_color1  clrRed
-
+#property indicator_color1  clrWhite
+enum enMaTypes
+  {
+   ma_sma,    // Simple moving average
+   ma_ema,    // Exponential moving average
+   ma_smma,   // Smoothed MA
+   ma_lwma    // Linear weighted MA
+  };
 
 //--- input parameters
-input int            InpMAPeriod=13;         // Period
-input int            InpMAShift=0;           // Shift
-input ENUM_MA_METHOD InpMAMethod=MODE_SMMA;  // Method
-//input color          InpColor=clrYellow;       // Color
-///input color          InpColor=clrGreen; 
+input int            InpMAPeriod=21;         // Peri
+input int InpMAMethod = 1;
+int InpMAShift = 0;
+
 //--- indicator buffers
 double               ExtLineBuffer[];
+ENUM_MA_METHOD input_to_type(int mode)
+  {
+   switch(mode)
+     {
+      case ma_sma:
+         return (MODE_SMA);
+      case ma_ema:
+         return(MODE_EMA);
+      case ma_smma:
+         return(MODE_SMMA);
+      case ma_lwma:
+            return(MODE_LWMA);
+      default :
+         Alert("Custom White indicicator no input to type conversion");
+     }
+     return -1;
+  }
 //+------------------------------------------------------------------+
 //|   simple moving average                                          |
 //+------------------------------------------------------------------+
@@ -33,17 +58,19 @@ void CalculateSimpleMA(int rates_total,int prev_calculated,int begin,const doubl
      {
       limit=InpMAPeriod+begin;
       //--- set empty value for first limit bars
-      for(i=0;i<limit-1;i++) ExtLineBuffer[i]=0.0;
+      for(i=0; i<limit-1; i++)
+         ExtLineBuffer[i]=0.0;
       //--- calculate first visible value
       double firstValue=0;
-      for(i=begin;i<limit;i++)
+      for(i=begin; i<limit; i++)
          firstValue+=price[i];
       firstValue/=InpMAPeriod;
       ExtLineBuffer[limit-1]=firstValue;
      }
-   else limit=prev_calculated-1;
+   else
+      limit=prev_calculated-1;
 //--- main loop
-   for(i=limit;i<rates_total && !IsStopped();i++)
+   for(i=limit; i<rates_total && !IsStopped(); i++)
       ExtLineBuffer[i]=ExtLineBuffer[i-1]+(price[i]-price[i-InpMAPeriod])/InpMAPeriod;
 //---
   }
@@ -59,12 +86,13 @@ void CalculateEMA(int rates_total,int prev_calculated,int begin,const double &pr
      {
       limit=InpMAPeriod+begin;
       ExtLineBuffer[begin]=price[begin];
-      for(i=begin+1;i<limit;i++)
+      for(i=begin+1; i<limit; i++)
          ExtLineBuffer[i]=price[i]*SmoothFactor+ExtLineBuffer[i-1]*(1.0-SmoothFactor);
      }
-   else limit=prev_calculated-1;
+   else
+      limit=prev_calculated-1;
 //--- main loop
-   for(i=limit;i<rates_total && !IsStopped();i++)
+   for(i=limit; i<rates_total && !IsStopped(); i++)
       ExtLineBuffer[i]=price[i]*SmoothFactor+ExtLineBuffer[i-1]*(1.0-SmoothFactor);
 //---
   }
@@ -82,10 +110,11 @@ void CalculateLWMA(int rates_total,int prev_calculated,int begin,const double &p
       weightsum=0;
       limit=InpMAPeriod+begin;
       //--- set empty value for first limit bars
-      for(i=0;i<limit;i++) ExtLineBuffer[i]=0.0;
+      for(i=0; i<limit; i++)
+         ExtLineBuffer[i]=0.0;
       //--- calculate first visible value
       double firstValue=0;
-      for(i=begin;i<limit;i++)
+      for(i=begin; i<limit; i++)
         {
          int k=i-begin+1;
          weightsum+=k;
@@ -94,12 +123,14 @@ void CalculateLWMA(int rates_total,int prev_calculated,int begin,const double &p
       firstValue/=(double)weightsum;
       ExtLineBuffer[limit-1]=firstValue;
      }
-   else limit=prev_calculated-1;
+   else
+      limit=prev_calculated-1;
 //--- main loop
-   for(i=limit;i<rates_total && !IsStopped();i++)
+   for(i=limit; i<rates_total && !IsStopped(); i++)
      {
       sum=0;
-      for(int j=0;j<InpMAPeriod;j++) sum+=(InpMAPeriod-j)*price[i-j];
+      for(int j=0; j<InpMAPeriod; j++)
+         sum+=(InpMAPeriod-j)*price[i-j];
       ExtLineBuffer[i]=sum/weightsum;
      }
 //---
@@ -115,17 +146,19 @@ void CalculateSmoothedMA(int rates_total,int prev_calculated,int begin,const dou
      {
       limit=InpMAPeriod+begin;
       //--- set empty value for first limit bars
-      for(i=0;i<limit-1;i++) ExtLineBuffer[i]=0.0;
+      for(i=0; i<limit-1; i++)
+         ExtLineBuffer[i]=0.0;
       //--- calculate first visible value
       double firstValue=0;
-      for(i=begin;i<limit;i++)
+      for(i=begin; i<limit; i++)
          firstValue+=price[i];
       firstValue/=InpMAPeriod;
       ExtLineBuffer[limit-1]=firstValue;
      }
-   else limit=prev_calculated-1;
+   else
+      limit=prev_calculated-1;
 //--- main loop
-   for(i=limit;i<rates_total && !IsStopped();i++)
+   for(i=limit; i<rates_total && !IsStopped(); i++)
       ExtLineBuffer[i]=(ExtLineBuffer[i-1]*(InpMAPeriod-1)+price[i])/InpMAPeriod;
 //---
   }
@@ -142,18 +175,14 @@ void OnInit()
    PlotIndexSetInteger(0,PLOT_DRAW_BEGIN,InpMAPeriod);
 //---- line shifts when drawing
    PlotIndexSetInteger(0,PLOT_SHIFT,InpMAShift);
+   IndicatorSetString(INDICATOR_SHORTNAME,"Slow MA " + IntegerToString(InpMAPeriod) + " ( " + EnumToString(input_to_type(InpMAMethod)) + ")");
+//-
 //--- color line
 //   PlotIndexSetInteger(0,PLOT_LINE_COLOR,InpColor);
 //--- name for DataWindow
-   string short_name="unknown ma";
-   switch(InpMAMethod)
-     {
-      case MODE_EMA :  short_name="EMA";  break;
-      case MODE_LWMA : short_name="LWMA"; break;
-      case MODE_SMA :  short_name="SMA";  break;
-      case MODE_SMMA : short_name="SMMA"; break;
-     }
-   IndicatorSetString(INDICATOR_SHORTNAME,short_name+"("+string(InpMAPeriod)+")");
+
+
+
 //---- sets drawing line empty value--
    PlotIndexSetDouble(0,PLOT_EMPTY_VALUE,0.0);
 //---- initialization done
@@ -176,12 +205,20 @@ int OnCalculate(const int rates_total,
    PlotIndexSetInteger(0,PLOT_DRAW_BEGIN,InpMAPeriod-1+begin);
 
 //--- calculation
-   switch(InpMAMethod)
+   switch(input_to_type(InpMAMethod))
      {
-      case MODE_EMA:  CalculateEMA(rates_total,prev_calculated,begin,price);        break;
-      case MODE_LWMA: CalculateLWMA(rates_total,prev_calculated,begin,price);       break;
-      case MODE_SMMA: CalculateSmoothedMA(rates_total,prev_calculated,begin,price); break;
-      case MODE_SMA:  CalculateSimpleMA(rates_total,prev_calculated,begin,price);   break;
+      case MODE_EMA:
+         CalculateEMA(rates_total,prev_calculated,begin,price);
+         break;
+      case MODE_LWMA:
+         CalculateLWMA(rates_total,prev_calculated,begin,price);
+         break;
+      case MODE_SMMA:
+         CalculateSmoothedMA(rates_total,prev_calculated,begin,price);
+         break;
+      case MODE_SMA:
+         CalculateSimpleMA(rates_total,prev_calculated,begin,price);
+         break;
      }
 //--- return value of prev_calculated for next call
    return(rates_total);

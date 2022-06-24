@@ -7,15 +7,16 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #include "Custom.mqh"
-#define INDICATOR_NAME "Custom Moving Average Input Color_Cyan"
 
 //https://stackoverflow.com/questions/52769369/mql5-pass-indicator-as-parameter
 #include <MqlParams.mqh>
 #include "CICustomMA.mqh"
+#define INDICATOR_NAME "Custom Moving Average Input Color_Cyan"
 
 class CICustomMA_Cyan : public CICustomMA
-  {
-private:
+  
+{
+private : 
 
 public:
                      CICustomMA_Cyan();
@@ -28,13 +29,16 @@ public:
                             int MAPeriod, 
                             enMaTypes inpMaMethod) 
 {
-return(CICustomMA::Create(symbol,tf,INDICATOR_NAME,MAPeriod,inpMaMethod));
+CMqlParams params;
+return(CICustomMA::Create(symbol,tf,INDICATOR_NAME,MAPeriod,inpMaMethod,params));
 }
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 CICustomMA_Cyan::CICustomMA_Cyan()
   {
+
   }
 //+------------------------------------------------------------------+
 //|                                                                  |

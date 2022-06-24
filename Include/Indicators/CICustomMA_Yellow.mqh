@@ -41,5 +41,6 @@ CICustomMA_Yellow::~CICustomMA_Yellow()
                             int MAPeriod, 
                             enMaTypes inpMaMethod) 
 {
-return(CICustomMA::Create(symbol,tf,INDICATOR_NAME,MAPeriod,inpMaMethod));
+CMqlParams params;
+return(CICustomMA::Create(symbol,tf,INDICATOR_NAME,MAPeriod,inpMaMethod,params));
 }
