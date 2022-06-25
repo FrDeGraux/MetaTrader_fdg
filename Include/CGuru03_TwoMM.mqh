@@ -206,9 +206,15 @@ bool CGuruEx03_TwoMM::InitIndicators()
             Long = false;
         }
 
-      bool buy_signal =   !Long && (Medium_MA_Hysteresis > (Slow_MA));
-      bool sell_signal =   Long && (Medium_MA_Hysteresis < (Slow_MA ));
-      //  buy_signal = true;
+      bool buy_signal =   !Long && (Medium_MA > (Slow_MA + hysteresis));
+      bool sell_signal =   Long && (Medium_MA + hysteresis < (Slow_MA ));
+      
+      
+      if(buy_signal)
+         this.writeDebugMsg( TimeToString(TimeCurrent(),TIME_DATE) + " BUY ;" + DoubleToString(Medium_MA) + ";" + DoubleToString(Slow_MA)+ ";" + IntegerToString(hysteresis));
+
+      else if(buy_signal)
+         this.writeDebugMsg(TimeToString(TimeCurrent(),TIME_DATE) + " SELL ;" + DoubleToString(Medium_MA) + ";" + DoubleToString(Slow_MA)+ ";" + IntegerToString(hysteresis));
       return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal));
 
 

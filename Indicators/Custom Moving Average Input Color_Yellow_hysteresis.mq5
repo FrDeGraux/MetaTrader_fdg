@@ -117,8 +117,8 @@ void CalculateSimpleMA(int rates_total,int prev_calculated,int begin,const doubl
    ArrayFree(values_slow_MA);
    ArrayResize(values_slow_MA,window_backward);
    
-   ArrayCopy(values_slow_MA,buffer_MA,0,i-window_backward,window_backward);
-   ArrayCopy(values_fast,ExtLineBuffer,0,i-window_backward,window_backward);
+   ArrayCopy(values_slow_MA,buffer_MA,0,i-1-window_backward,window_backward);
+   ArrayCopy(values_fast,ExtLineBuffer,0,i-1-window_backward,window_backward);
    
    ArrayFree(gap_slow_fast_ma);
    ArrayResize(gap_slow_fast_ma,window_backward);

@@ -19,6 +19,7 @@ public:
 private : 
                      string filename;
                      int handleFile;
+                     bool isUsed;
   };
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -35,6 +36,7 @@ void CSVDebugger::init(string ctx)
 {
    this.filename = ctx + "_" + buildFileName() + ".csv" ; 
    this.handleFile = FileOpen(this.filename,FILE_CSV|FILE_READ|FILE_WRITE, ',');
+   isUsed = false;
    if(this.handleFile > 0)
        Print("File " + this.filename + " is opened");
 }
@@ -53,11 +55,17 @@ CSVDebugger::~CSVDebugger()
   {
    FileClose(this.handleFile);
       Print("File " + this.filename + " is closed");
+   if(isUsed == true)
+      return;
+     
+   bool bDeleteSuccess = FileDelete(filename);
+   if(!bDeleteSuccess)
+      Print("CSVDebugger::~CSVDebugger() Error");
   }
 //+------------------------------------------------------------------+
 bool CSVDebugger::writeMsg(string msg)
 {
-
+      isUsed = true;
       return(FileWrite(this.handleFile,msg) > 0);
     
 }

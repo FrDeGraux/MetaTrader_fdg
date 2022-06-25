@@ -68,6 +68,8 @@ double CSymbolInfoCustom::computeSymbolEquity()
 
 
    balance = computeSymbolBalance();
+   if(balance != 100000.0)
+      Print("Hi");
    double res = balance + computeSymbolFloatingEquity();
    return res;
   }

@@ -307,7 +307,7 @@ bool CGuruEx03_Base::Validated()
   bool CGuruEx03_Base::LookForEntry_Random()
   {
             m_Indis.Refresh();
-           double   signal_rd = MathRandInt(0,70000);
+           double   signal_rd = MathRandInt(0,15);
            bool buy_signal = false;
            bool sell_signal = false;
     
