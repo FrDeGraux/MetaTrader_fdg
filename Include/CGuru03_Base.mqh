@@ -16,7 +16,7 @@
 #include <Indicators\CICustomMA.mqh>
 #include <Indicators\CICustomATR.mqh>
 #include <CSVDebugger.mqh> 
-#include "TradeEnhanced.mqh"
+#include <Trade\TradeEnhanced.mqh>
 #include <MqlOutputMessageBase.mqh>
 class CGuruEx03_Base : CArrayObj
   { 
@@ -66,7 +66,7 @@ public:
    bool              Init(int _magicNumber,string Pair,int slippage,double lot,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,bool useStopTP,CSVDebugger* _debugger);
    void              Deinit();
    bool              Validated();
-   bool             CheckEntry(bool buy_signal,bool sell_signal);
+   bool             CheckEntry(bool buy_signal,bool sell_signal,string msg = "");
    bool              rectangleCreate();
    bool              writeTrade (MqlOutputMessageBase* msg,string extra);
       CICustomATR              *m_ATR;
@@ -307,7 +307,7 @@ bool CGuruEx03_Base::Validated()
   bool CGuruEx03_Base::LookForEntry_Random()
   {
             m_Indis.Refresh();
-           double   signal_rd = MathRandInt(0,15);
+           double   signal_rd = MathRandInt(0,15000);
            bool buy_signal = false;
            bool sell_signal = false;
     
@@ -320,7 +320,10 @@ bool CGuruEx03_Base::Validated()
          {
             sell_signal = true;
          }   
-          return(CheckEntry(buy_signal,sell_signal));
+ 
+             string msg = "1.12048154_1.12070020_0.00027308_1.12075462";
+
+          return(CheckEntry(buy_signal,sell_signal,msg));
          
   }
 //+------------------------------------------------------------------+
@@ -328,7 +331,7 @@ bool CGuruEx03_Base::Validated()
 //+------------------------------------------------------------------+
 int u = 0;
 
-bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
+bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
   {
  //  double atr_value = 0;
      //atr_value = m_ATR.Main(0);
@@ -337,7 +340,7 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
 
    double price = iOpen(m_Symbol.Name(),Period(),0);
 
- double equity = m_Symbol.computeSymbolEquity();
+   double equity = m_Symbol.computeSymbolEquity();
   double positioning = m_Symbol.computeNetPositioning();
 
     string sBalanceVarName = m_Symbol.Name() + "_balance";
@@ -356,7 +359,7 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
    if(OrderNumber > 0) // does an active position exist ?   
       {
    //         this.writeDebugMsg(" Closing order " + StringToInteger(OrderNumber));
-            m_Trade.PositionClose(m_Pair);  // Close previous short order
+            m_Trade.PositionClose(m_Pair,ULONG_MAX,msg);  // Close previous short order
             int y = 1;
       }  
       if(useStopTP)
@@ -368,7 +371,7 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
       
   
         
-      if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_BUY, GetSize(), m_Symbol.Ask(),sl,tp))
+      if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_BUY, GetSize(), m_Symbol.Ask(),sl,tp,msg))
         {
          double price = m_Trade.ResultPrice();
          
@@ -385,13 +388,14 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
       } 
      
    }
+   
    else
       if(sell_signal)
      {
       if(OrderNumber > 0) 
          {
       //   this.writeDebugMsg(" Closing order " + StringToInteger(OrderNumber));
-          m_Trade.PositionClose(m_Pair);  // Close previous long order
+          m_Trade.PositionClose(m_Pair,ULONG_MAX,msg);  // Close previous long order
            int y = 1;
          }
        if(useStopTP)
@@ -400,7 +404,7 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
           tp =    m_ATR.Main(3);
       }  
 
-         if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_SELL, GetSize(), m_Symbol.Bid(), sl,tp))
+         if(m_Trade.PositionOpen(m_Pair, ORDER_TYPE_SELL, GetSize(), m_Symbol.Bid(), sl,tp,msg))
            {
             OrderNumber = m_Trade.ResultOrder();
             // this.writeDebugMsg(" Opening order " + StringToInteger(OrderNumber));

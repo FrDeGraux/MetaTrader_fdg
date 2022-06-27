@@ -118,6 +118,7 @@ void DealsRequester::writeTradeHistory()
       
          text+=StringFormat(";%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19s ;%-40s",
                            deal_volume,deal_price,deal_commission,deal_swap,deal_profit,deal_symbol,deal_comment);
+   
          //--- try to get oeders ticket_history_order 
          if(HistoryOrderSelect(deal_order))
            {
@@ -178,7 +179,7 @@ void DealsRequester::writeTradeHistory()
       
        
             text+=StringFormat(";%-19s ;%-40s ;%-19s",o_symbol,o_comment,o_extarnal_id);
-    
+
     
 
             int d=0;

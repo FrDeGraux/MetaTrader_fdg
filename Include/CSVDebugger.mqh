@@ -6,6 +6,7 @@
 #property copyright "Copyright 2021, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
 #property version   "1.00"
+#include <utilDateTime.mqh>
 class CSVDebugger
   {
 private:
@@ -21,12 +22,13 @@ private :
                      int handleFile;
                      bool isUsed;
   };
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 string buildFileName()
 {
-string sTime = TimeToString(TimeCurrent(),TIME_DATE|TIME_MINUTES );
+string sTime = TimeToString(utilDateTime::GetTimeLocal(),TIME_DATE|TIME_SECONDS);
 StringReplace(sTime,".","_");
 StringReplace(sTime,":","_");
 
@@ -66,6 +68,7 @@ CSVDebugger::~CSVDebugger()
 bool CSVDebugger::writeMsg(string msg)
 {
       isUsed = true;
+
       return(FileWrite(this.handleFile,msg) > 0);
     
 }

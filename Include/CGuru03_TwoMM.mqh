@@ -183,8 +183,13 @@ bool CGuruEx03_TwoMM::InitIndicators()
    bool CGuruEx03_TwoMM::LookForEntry_StrategyCrossOver()
      {
       CArrayObj* res = new CArrayObj();
+         if(!m_Symbol.RefreshRates())
+         return false;
       m_Indis.Refresh();
 
+
+   
+         
       double Slow_MA = m_Slow.Main(0);
       double Medium_MA = m_Medium.Main(0);
       double Medium_MA_Hysteresis= m_Medium.Main(1);
@@ -192,9 +197,6 @@ bool CGuruEx03_TwoMM::InitIndicators()
       double hysteresis = MathAbs(Medium_MA_Hysteresis-Medium_MA);
 
       double Fast, Slow,Medium;
-
-      if(!m_Symbol.RefreshRates())
-         return false;
 
 
       if(!Checked)
@@ -206,16 +208,18 @@ bool CGuruEx03_TwoMM::InitIndicators()
             Long = false;
         }
 
-      bool buy_signal =   !Long && (Medium_MA > (Slow_MA + hysteresis));
-      bool sell_signal =   Long && (Medium_MA + hysteresis < (Slow_MA ));
-      
-      
-      if(buy_signal)
-         this.writeDebugMsg( TimeToString(TimeCurrent(),TIME_DATE) + " BUY ;" + DoubleToString(Medium_MA) + ";" + DoubleToString(Slow_MA)+ ";" + IntegerToString(hysteresis));
+      bool buy_signal =   !Long && (Medium_MA >= (Slow_MA + hysteresis));
+      bool sell_signal =   Long && (Medium_MA + hysteresis <= (Slow_MA ));
 
-      else if(buy_signal)
-         this.writeDebugMsg(TimeToString(TimeCurrent(),TIME_DATE) + " SELL ;" + DoubleToString(Medium_MA) + ";" + DoubleToString(Slow_MA)+ ";" + IntegerToString(hysteresis));
-      return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal));
+      string msg = DoubleToString((Slow_MA)) + "_" + DoubleToString((Medium_MA))+ "_" + DoubleToString((hysteresis));
+
+  
+            
+
+      return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal,msg));
+
+
+
 
 
 

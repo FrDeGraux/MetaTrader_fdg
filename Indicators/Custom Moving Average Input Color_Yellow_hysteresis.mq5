@@ -37,7 +37,7 @@ input int   window_backward = 7;
 input int    IntMALongPeriodBackWard = 65;  
 input int     MALongType = ma_sma;
 input int            InpMAPeriod=20;
-input int InpMAMethod = 1;         // Period
+input int InpMAMethod = 0;         // Period
           // Shift
 int InpMAShift = 0;
 //input color          InpColor=clrYellow;       // Color

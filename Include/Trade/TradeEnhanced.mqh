@@ -53,6 +53,7 @@ bool CTradeEnhanced::PositionClose(const string symbol,const ulong deviation,str
         }
       //--- setting request
       m_request.comment = comment;
+  
       m_request.action   =TRADE_ACTION_DEAL;
       m_request.symbol   =symbol;
       m_request.volume   =PositionGetDouble(POSITION_VOLUME);

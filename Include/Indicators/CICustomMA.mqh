@@ -66,12 +66,12 @@ void CICustomMA::setMAPeriod(int _MAPeriod)
     
 double CICustomMA::Main(const int index) const
   {
-   CIndicatorBuffer *buffer=At(0);
+   CIndicatorBuffer *buffer=At(index);
 //--- check
    if(buffer==NULL) 
       return(EMPTY_VALUE);
 //---
-   return(buffer.At(index));
+   return(buffer.At(0));
   }
 //+---
 bool CICustomMA::Create(  string symbol, 
