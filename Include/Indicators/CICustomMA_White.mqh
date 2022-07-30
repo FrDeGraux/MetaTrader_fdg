@@ -21,24 +21,23 @@ class CICustomMA_White : public CICustomMA
 public:
                      CICustomMA_White();
                     ~CICustomMA_White();
-   bool Create(  string symbol,ENUM_TIMEFRAMES tf ,int MAPeriod,enMaTypes inpMaMethod) ;
+                    
+   bool              Create(const string symbol,const ENUM_TIMEFRAMES period,
+               const int ma_period,const int ma_shift,
+               const ENUM_MA_METHOD ma_method,const int applied);
+                 
+               
+               
 private : 
 
   }; 
   
-    bool CICustomMA_White::Create(  string symbol, 
-                            ENUM_TIMEFRAMES tf , 
-                            int MAPeriod, 
-                            enMaTypes inpMaMethod) 
-{
-CMqlParams params;
-return(CICustomMA::Create(symbol,tf,INDICATOR_NAME,MAPeriod,inpMaMethod,params));
-}
+
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CICustomMA_White::CICustomMA_White()
+CICustomMA_White::CICustomMA_White() : CICustomMA(INDICATOR_NAME)
   {
 
   }
@@ -49,3 +48,10 @@ CICustomMA_White::~CICustomMA_White()
   {
   }
 //+------------------------------------------------------------------+
+bool CICustomMA_White::Create(const string symbol,const ENUM_TIMEFRAMES period,
+               const int ma_period,const int ma_shift,
+               const ENUM_MA_METHOD ma_method,const int applied)
+  {
+   CMqlParams params;
+   return(CICustomMA::Create(symbol,period,ma_period,ma_shift,ma_method,applied));
+  }

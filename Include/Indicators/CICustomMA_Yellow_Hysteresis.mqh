@@ -9,8 +9,8 @@
 
 #include "CICustomMA.mqh"
 #define INDICATOR_NAME "Custom Moving Average Input Color_Yellow_hysteresis"
-#define INITIAL_BUFFER_SIZE 2048
 
+#define HYSTERESIS_NBUFFERS 5
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -24,44 +24,45 @@ private:
 
 
 public:
-                     CiCustomMA_Yellow_Hysteresis(int _window_backward,double long_ma_period,enMaTypes method);
+                     CiCustomMA_Yellow_Hysteresis(int _window_backward,double _long_ma_period);
                     ~CiCustomMA_Yellow_Hysteresis();
-   bool              Create(string symbol,
-               ENUM_TIMEFRAMES tf,
-               int MAPeriod,
-               enMaTypes inpMaMethod);
+
+   bool              Create(const string symbol,const ENUM_TIMEFRAMES period,
+               const int ma_period,const int ma_shift,
+               const ENUM_MA_METHOD ma_method,const int applied);
   };
 
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-bool CiCustomMA_Yellow_Hysteresis::Create(string symbol,
-      ENUM_TIMEFRAMES tf,
-      int _MAPeriod,
-      enMaTypes inpMaMethod)
+bool CiCustomMA_Yellow_Hysteresis::Create(const string symbol,const ENUM_TIMEFRAMES period,
+               const int ma_period,const int ma_shift,
+               const ENUM_MA_METHOD ma_method,const int applied)
   {
    CMqlParams params;
-   string ind = INDICATOR_NAME;
-   params.Set(ind, TYPE_STRING);
-   params.Set(window_backward, TYPE_UCHAR);
-   params.Set(long_ma_period,TYPE_UCHAR);
-   params.Set(method,TYPE_UCHAR);
-   return(CICustomMA::Create(symbol,tf,INDICATOR_NAME,_MAPeriod,inpMaMethod,params));
+   if(!CICustomMA::Create(symbol,period,ma_period,ma_shift,ma_method,applied));
+      return false;
+      
 
-
-
+     if(!BufferResize(window_backward))
+     {
+         Print("Error BufferResizeHysteresis MA");
+      return(false);  
+     }
+//--- ok
+   return(true);
   }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CiCustomMA_Yellow_Hysteresis::CiCustomMA_Yellow_Hysteresis(int _window_backward,double _long_ma_period,enMaTypes _method)
+CiCustomMA_Yellow_Hysteresis::CiCustomMA_Yellow_Hysteresis(int _window_backward,double _long_ma_period) :  CICustomMA(INDICATOR_NAME,HYSTERESIS_NBUFFERS)
   {
    window_backward = _window_backward;
    long_ma_period = _long_ma_period;
-   method  = _method;
   }
+  
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+

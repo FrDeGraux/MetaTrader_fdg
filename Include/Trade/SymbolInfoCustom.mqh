@@ -92,7 +92,7 @@ double CSymbolInfoCustom::computeNetPositioning()
       string msg_base  =Name() +  "_POSITION_" + IntegerToString(i) ;
       if(!m_position_info.SelectByIndex(i))
         {
-         Print("Unable to select position " + IntegerToString(i));
+         Print("CSymbolInfoCustom:: Unable to select position " + IntegerToString(i));
          continue;
         }
       string s1 = m_position_info.Symbol();
@@ -138,7 +138,7 @@ double CSymbolInfoCustom::computeSymbolFloatingEquity()
       string msg_base  =Name() +  "_POSITION_" + IntegerToString(i) ;
       if(!m_position_info.SelectByIndex(i))
         {
-         Print("Unable to select position " + IntegerToString(i));
+         Print("CSymbolInfoCustom::Unable to select position " + IntegerToString(i));
          continue;
         }
       string s1 = m_position_info.Symbol();
@@ -184,7 +184,7 @@ double CSymbolInfoCustom::computeSymbolBalance()
       int type = m_deal_info.DealType();
       if(!m_deal_info.SelectByIndex(i))
         {
-         Print("Unabrzle to select deal " + IntegerToString(i));
+         Print("CSymbolInfoCustom::Unabrzle to select deal " + IntegerToString(i));
          continue;
         }
 

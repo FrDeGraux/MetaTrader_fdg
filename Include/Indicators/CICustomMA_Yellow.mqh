@@ -1,7 +1,7 @@
 //+------------------------------------------------------------------+
 //|                                                       CiRAVI.mqh |
 //|                                  Copyright 2021, MetaQuotes Ltd. |
-//|                                             https://www.mql5.com |
+//|                                             https://www.mql5.com |CICustomMA
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2021, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
@@ -13,6 +13,9 @@
 #include <MqlParams.mqh>
 #include "CICustomMA.mqh"
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 class CICustomMA_Yellow : public CICustomMA
   {
 private:
@@ -20,13 +23,16 @@ private:
 public:
                      CICustomMA_Yellow();
                     ~CICustomMA_Yellow();
+   bool              Create(const string symbol,const ENUM_TIMEFRAMES period,
+                            const int ma_period,const int ma_shift,
+                            const ENUM_MA_METHOD ma_method,const int applied);
 
-    bool Create(  string symbol,ENUM_TIMEFRAMES tf,int MAPeriod,enMaTypes inpMaMethod);
-  }; 
+
+  };
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CICustomMA_Yellow::CICustomMA_Yellow()
+CICustomMA_Yellow::CICustomMA_Yellow() : CICustomMA(INDICATOR_NAME)
   {
   }
 //+------------------------------------------------------------------+
@@ -36,11 +42,11 @@ CICustomMA_Yellow::~CICustomMA_Yellow()
   {
   }
 //+------------------------------------------------------------------+
-  bool CICustomMA_Yellow::Create(  string symbol, 
-                            ENUM_TIMEFRAMES tf, 
-                            int MAPeriod, 
-                            enMaTypes inpMaMethod) 
-{
-CMqlParams params;
-return(CICustomMA::Create(symbol,tf,INDICATOR_NAME,MAPeriod,inpMaMethod,params));
-}
+bool CICustomMA_Yellow::Create(const string symbol,const ENUM_TIMEFRAMES period,
+                               const int ma_period,const int ma_shift,
+                               const ENUM_MA_METHOD ma_method,const int applied)
+  {
+   CMqlParams params;
+   return(CICustomMA::Create(symbol,period,ma_period,ma_shift,ma_method,applied));
+  }
+//+------------------------------------------------------------------+

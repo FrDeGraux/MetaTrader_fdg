@@ -16,7 +16,7 @@ datetime utilDateTime::GetTimeLocal( void )
    string tmpFileName      = "_TEMP_FILE";
    int handleTmpFile       = FileOpen(tmpFileName, FILE_WRITE); if(handleTmpFile==INVALID_HANDLE);
    datetime now            = (datetime)FileGetInteger(handleTmpFile, FILE_CREATE_DATE);
-   MqlDateTime nowMql;
+
 
    FileClose(handleTmpFile);
    FileDelete(tmpFileName);

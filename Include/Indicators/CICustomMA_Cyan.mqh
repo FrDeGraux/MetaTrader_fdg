@@ -21,22 +21,14 @@ private :
 public:
                      CICustomMA_Cyan();
                     ~CICustomMA_Cyan();
-                     bool Create(  string symbol,ENUM_TIMEFRAMES tf,int MAPeriod,enMaTypes inpMaMethod) ;
 
   }; 
-  bool CICustomMA_Cyan::Create(  string symbol, 
-                            ENUM_TIMEFRAMES tf, 
-                            int MAPeriod, 
-                            enMaTypes inpMaMethod) 
-{
-CMqlParams params;
-return(CICustomMA::Create(symbol,tf,INDICATOR_NAME,MAPeriod,inpMaMethod,params));
-}
+
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CICustomMA_Cyan::CICustomMA_Cyan()
+CICustomMA_Cyan::CICustomMA_Cyan() : CICustomMA(INDICATOR_NAME)
   {
 
   }

@@ -8,7 +8,7 @@
 #property version   "1.00"
 #include "Custom.mqh"
 #define INDICATOR_NAME "PositionIndic"
-#define INITIAL_BUFFER_SIZE 2048
+#define INITIAL_BUFFER_SIZE 1
 //https://stackoverflow.com/questions/52769369/mql5-pass-indicator-as-parameter
 #include <MqlParams.mqh>
 
@@ -82,7 +82,7 @@ bool CiPosition::Initialize(const string symbol,
    // #1 Specify if this indicator redraws
    this.Redrawer(true);
    // #2 Specify the number of indicator buffers to be used. 
-   if (!this.NumBuffers(2))
+   if (!this.NumBuffers(1))
       return false; 
    // #3 Call super.Initialize 
    if (!CiCustom::Initialize(symbol, period, num_params, params))

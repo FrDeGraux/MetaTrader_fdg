@@ -7,15 +7,15 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #include "Custom.mqh"
-#define INDICATOR_NAME "ProfitIndicator"
-#define INITIAL_BUFFER_SIZE 2048
+#define INDICATOR_NAME "ProfitValue iFish"
+#define INITIAL_BUFFER_SIZE 1
 //https://stackoverflow.com/questions/52769369/mql5-pass-indicator-as-parameter
 #include <MqlParams.mqh>
 
 class CiProfit : public CiCustom
   {
 private:
-
+            static const int nBuffers;
 public:
                      CiProfit();
                     ~CiProfit();
@@ -27,6 +27,7 @@ public:
                               const MqlParam &params[]);
 
   };
+  const int CiProfit::nBuffers = 2;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -82,7 +83,7 @@ bool CiProfit::Initialize(const string symbol,
    // #1 Specify if this indicator redraws
    this.Redrawer(true);
    // #2 Specify the number of indicator buffers to be used. 
-   if (!this.NumBuffers(2))
+   if (!this.NumBuffers(nBuffers))
       return false; 
    // #3 Call super.Initialize 
    if (!CiCustom::Initialize(symbol, period, num_params, params))

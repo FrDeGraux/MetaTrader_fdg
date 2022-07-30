@@ -9,7 +9,7 @@
 #include "Custom.mqh"
 
 #define INDICATOR_NAME "ATR_onPrices"
-
+#define INITIAL_BUFFER_SIZE 1
 
 //https://stackoverflow.com/questions/52769369/mql5-pass-indicator-as-parameter
 #include <MqlParams.mqh>

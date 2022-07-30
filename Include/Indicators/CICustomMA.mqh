@@ -6,7 +6,7 @@
 #property copyright "Copyright 2021, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
 #property version   "1.00"
-#include "Custom.mqh"
+#include "CiCustom_Enhanced.mqh"
 
 #define INITIAL_BUFFER_SIZE 2048
 
@@ -21,22 +21,24 @@ enum enMaTypes
    ma_smma,   // Smoothed MA
    ma_lwma    // Linear weighted MA
 };
-class CICustomMA : public CiCustom
+class CICustomMA : public CiCustom_Enhanced
   {
 
-                  
+private : 
+string ind_Name;                 
 public:
-                     CICustomMA();
+                     CICustomMA(string _indName,int nBuffers = 1);
                     ~CICustomMA();
                     int MAPeriod;
+                    int nBuffers;
                     double            Main(const int index) const;
                     double computeVolatility();
                     double computeATR();
                     void setMAPeriod(int);
-                    bool Create(  string symbol, 
-                            ENUM_TIMEFRAMES tf,string ind_Name, 
-                            int _MAPeriod, 
-                            enMaTypes inpMaMethod,CMqlParams& params);
+                    bool Create(const string symbol,const ENUM_TIMEFRAMES period,
+               const int ma_period,const int ma_shift,
+               const ENUM_MA_METHOD ma_method,const int applied);
+                            
                        bool     Initialize(const string symbol, 
                               const ENUM_TIMEFRAMES period, 
                               const int num_params,const int nBuffers, 
@@ -46,7 +48,7 @@ public:
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CICustomMA::CICustomMA()
+CICustomMA::CICustomMA(string _indName,int _nBuffers )  : ind_Name(_indName),nBuffers(_nBuffers)
   {
   }
 //+------------------------------------------------------------------+
@@ -74,22 +76,21 @@ double CICustomMA::Main(const int index) const
    return(buffer.At(0));
   }
 //+---
-bool CICustomMA::Create(  string symbol, 
-                            ENUM_TIMEFRAMES tf,string ind_Name, 
-                            int _MAPeriod, 
-                            enMaTypes inpMaMethod,CMqlParams& params)
+bool CICustomMA::Create(const string symbol,const ENUM_TIMEFRAMES period,
+               const int ma_period,const int ma_shift,
+               const ENUM_MA_METHOD ma_method,const int applied)
 {  
-
-   // #1 Setup the MQL params array for the custom indicator.
+CMqlParams params;
+   // #1 Setu p the MQL params array for the custom indicator.
 
   
    
             if(params.Total() == 0) 
-               params.Set(ind_Name, TYPE_STRING); // set first pramc with value ind_name
+               params.Set(this.ind_Name, TYPE_STRING); // set first pramc with value ind_name
 
-         params.Set(_MAPeriod, TYPE_UCHAR);
+         params.Set(ma_period, TYPE_UCHAR);
        
-         params.Set(inpMaMethod, TYPE_UCHAR);
+         params.Set(ma_method, TYPE_UCHAR);
  // set extra Hysteresis Parameter for MM
        
        
@@ -103,27 +104,27 @@ bool CICustomMA::Create(  string symbol,
       Print(__FUNCTION__+", Error Code = ",GetLastError());
      }
    // #2 Call the parent Create method with the params
-   if (!CiCustom::Create(symbol, tf, IND_CUSTOM, params.Total(), params.params))
-   
-      return false; 
+   if (!Create(symbol, period, IND_CUSTOM, params.Total(), params.params))
+         return false; 
    ChartIndicatorAdd(0,0,handle);
    // #3 Resize the buffer to the desired initial size
-   if (!this.BufferResize(INITIAL_BUFFER_SIZE))
-      return false;
-   return true; 
+    if(!Initialize(symbol,0,params.Total(),nBuffers,params.params))
+          return false;
+    return true;
+
 }
 bool CICustomMA::Initialize(const string symbol, 
                               const ENUM_TIMEFRAMES period, 
-                              const int num_params,const int nBuffers, 
+                              const int num_params,const int _nBuffers, 
                               const MqlParam &params[]
 ) {
    // #1 Specify if this indicator redraws
    this.Redrawer(true);
    // #2 Specify the number of indicator buffers to be used. 
-   if (!this.NumBuffers(5))
+   if (!this.NumBuffers(_nBuffers))
       return false; 
    // #3 Call super.Initialize 
-   if (!CiCustom::Initialize(symbol, period, num_params, params))
+   if (!CiCustom_Enhanced::Initialize(symbol, period, num_params, params))
       return false;
    return true;
 }
