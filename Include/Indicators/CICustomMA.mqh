@@ -30,7 +30,7 @@ public:
                      CICustomMA(string _indName,int nBuffers = 1);
                     ~CICustomMA();
                     int MAPeriod;
-                    int nBuffers;
+                    int nBuffers;  
                     double            Main(const int index) const;
                     double computeVolatility();
                     double computeATR();

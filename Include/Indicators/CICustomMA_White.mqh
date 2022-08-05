@@ -9,7 +9,7 @@
 #include "Custom.mqh"
 #define INDICATOR_NAME "Custom Moving Average Input Color_White"
 
-#define INITIAL_BUFFER_SIZE 2048
+
 
 //https://stackoverflow.com/questions/52769369/mql5-pass-indicator-as-parameter
 #include <MqlParams.mqh>
@@ -22,6 +22,7 @@ public:
                      CICustomMA_White();
                     ~CICustomMA_White();
                     
+   static const int bufferSize;
    bool              Create(const string symbol,const ENUM_TIMEFRAMES period,
                const int ma_period,const int ma_shift,
                const ENUM_MA_METHOD ma_method,const int applied);
@@ -31,7 +32,7 @@ public:
 private : 
 
   }; 
-  
+   const int CICustomMA_White::bufferSize = 1;
 
 
 //+------------------------------------------------------------------+
@@ -53,5 +54,12 @@ bool CICustomMA_White::Create(const string symbol,const ENUM_TIMEFRAMES period,
                const ENUM_MA_METHOD ma_method,const int applied)
   {
    CMqlParams params;
-   return(CICustomMA::Create(symbol,period,ma_period,ma_shift,ma_method,applied));
+   if(!(CICustomMA::Create(symbol,period,ma_period,ma_shift,ma_method,applied)))
+      return false;
+        if(!BufferResize(bufferSize))
+     {
+         Print("Error CICustomMA_White BufferResizeHysteresis MA");
+      return(false);  
+     }
+      return true;
   }
