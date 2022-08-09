@@ -169,7 +169,7 @@ bool CGuruEx03_TwoMM::InitIndicators()
 // Create fast MA and add it to collection
    if(m_Fast == NULL)
      {
-      if(UtilTerminal::isViewerMode())
+      if(UtilTerminal::isViewerMode()) 
         {
          if((m_Fast = new CiCustomMA_Yellow_Hysteresis(HysteresisMaxBackWardUse,SlowPeriod)) == NULL)
            {
@@ -179,7 +179,7 @@ bool CGuruEx03_TwoMM::InitIndicators()
         }
       else
         {
-         if((m_Fast = new CiMA_Enhanced) == NULL)
+         if((m_Fast = new CiCustomMA_Yellow_Hysteresis(HysteresisMaxBackWardUse,SlowPeriod)) == NULL)
            {
             Print("CGuruEx03_TwoMM CiMA_Enhanced Error creating fast MA");
             return(false);
@@ -204,13 +204,13 @@ bool CGuruEx03_TwoMM::InitIndicators()
       return(false);
      }
 
-// Create slow MA and add it to collection
+/*
    if(m_Slow == NULL)
      {
 
       if(UtilTerminal::isViewerMode())
         {
-         if((m_Slow = new CICustomMA_White) == NULL)
+         if((m_Slow = new CiMA_Enhanced) == NULL)
            {
             Print("Error creating m_Slow MA");
             return(false);
@@ -244,6 +244,7 @@ bool CGuruEx03_TwoMM::InitIndicators()
       Print("Error adding slow MA to indicator collection");
       return(false);
      }
+    */
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -263,11 +264,16 @@ bool CGuruEx03_TwoMM::LookForEntry_StrategyCrossOver()
          return false;
       m_Indis.Refresh();
 
-      double Slow_MA = m_Slow.GetData(0,0);
+   //   double Slow_MA = m_Slow.GetData(0,0);
       double Fast_MA = m_Fast.GetData(0,0);
-
-
-double hysteresis = getHysteresis();
+double Fast_MA_2 = m_Fast.GetData(1,0);
+double Fast_MA_3 = m_Fast.GetData(2,0);
+double Fast_MA_4 = m_Fast.GetData(3,0);
+double Fast_MA_5 = m_Fast.GetData(4,0);
+//double hysteresis = getHysteresis();
+double hysteresis = 0;
+return false;
+/*
       if(!Checked)
         {
          Checked = true;
@@ -283,7 +289,7 @@ double hysteresis = getHysteresis();
     string msg = DoubleToString((Slow_MA)) + "_" + DoubleToString((Fast_MA))+ "_" + DoubleToString((hysteresis));
 
       return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal,""));
-
+*/
   }
   
 bool CGuruEx03_TwoMM::LookForEntry_StrategyCrossOver_old()

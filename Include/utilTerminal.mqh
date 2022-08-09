@@ -13,9 +13,11 @@ class UtilTerminal
 };
 bool UtilTerminal::isViewerMode()
 {
+return false;
 return true;
 if(MQLInfoInteger(MQL_VISUAL_MODE))
    return true;
 else
    return false;
 }
+
