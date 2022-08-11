@@ -10,11 +10,15 @@ class UtilTerminal
 {
    public : 
       static bool isViewerMode();
+       static bool isViewerModeAlt();
 };
+bool UtilTerminal::isViewerModeAlt()
+{
+return true;
+}
 bool UtilTerminal::isViewerMode()
 {
 return false;
-return true;
 if(MQLInfoInteger(MQL_VISUAL_MODE))
    return true;
 else

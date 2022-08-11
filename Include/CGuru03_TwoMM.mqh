@@ -37,7 +37,7 @@ class CGuruEx03_TwoMM : public CGuruEx03_Base
 public :
                      CGuruEx03_TwoMM(int slowPeriod,int mediumPeriod,int hysterisis,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse);             // Constructor
                     ~CGuruEx03_TwoMM() { Deinit(); }  // Destructor
-
+   
    void              Deinit();
    bool              InitIndicators();
    bool              Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger);
@@ -57,12 +57,11 @@ private :
    int               ATR_MAPeriod;
    int               ATR_StopLossRange;
    int               ATR_TPRange;
-
+   bool              isLong();
    double            getHysteresis();
    enMaTypes         SlowMethod;
 
    enMaTypes         MediumMethod;
-
   };
 
 //+------------------------------------------------------------------+
@@ -78,16 +77,20 @@ private :
 //+------------------------------------------------------------------+
 double CGuruEx03_TwoMM::getHysteresis()
   {
-
-         return 0;
+  double Slow_MA;
+   if(UtilTerminal::isViewerModeAlt())
+           return(MathAbs(m_Fast.GetData(1,0)-m_Fast.GetData(0,0)));
+   else
+       Slow_MA = m_Slow.GetData(0,0);
+    
        double slow_MA_latest[];
        double fast_MA_latest[];
        double gap_slow_fast_ma[];
-       ArrayResize(slow_MA_latest,HysteresisMaxBackWardUse);
-       ArrayResize(gap_slow_fast_ma,HysteresisMaxBackWardUse);
-       ArrayResize(fast_MA_latest,HysteresisMaxBackWardUse);
+       ArrayResize(slow_MA_latest,HysteresisMaxBackWardUse-1);
+       ArrayResize(gap_slow_fast_ma,HysteresisMaxBackWardUse-1);
+       ArrayResize(fast_MA_latest,HysteresisMaxBackWardUse-1);
        double toFill;
-       for(int i=0; i<HysteresisMaxBackWardUse ; i++)
+       for(int i=0; i<HysteresisMaxBackWardUse-1 ; i++)
          {
           slow_MA_latest[i] =  m_Slow.GetData(0,i);
           fast_MA_latest[i] =  m_Fast.GetData(0,i);
@@ -169,7 +172,7 @@ bool CGuruEx03_TwoMM::InitIndicators()
 // Create fast MA and add it to collection
    if(m_Fast == NULL)
      {
-      if(UtilTerminal::isViewerMode()) 
+      if(UtilTerminal::isViewerModeAlt()) 
         {
          if((m_Fast = new CiCustomMA_Yellow_Hysteresis(HysteresisMaxBackWardUse,SlowPeriod)) == NULL)
            {
@@ -187,8 +190,8 @@ bool CGuruEx03_TwoMM::InitIndicators()
         }
      }
 
-
-   if(!m_Fast.Create(m_Pair, 0, i_FastPeriod,0,  MODE_EMA, PRICE_MEDIAN))
+CMqlParams params;
+   if(!m_Fast.Create(m_Pair, 0, i_FastPeriod,0,  MODE_SMA, PRICE_CLOSE,params))
      {
       Print("CGuruEx03_TwoMM::Error initializing fast MA");
       return(false);
@@ -204,33 +207,23 @@ bool CGuruEx03_TwoMM::InitIndicators()
       return(false);
      }
 
-/*
+
    if(m_Slow == NULL)
      {
-
-      if(UtilTerminal::isViewerMode())
-        {
+      //if(UtilTerminal::isViewerMode())
+            return true;
+        
          if((m_Slow = new CiMA_Enhanced) == NULL)
            {
             Print("Error creating m_Slow MA");
             return(false);
            }
-        }
-      else
-        {
-         if((m_Slow = new CiMA_Enhanced) == NULL)
-           {
-            Print("Error creating m_Slow MA");
-            return(false);
-           }
-        }
-
      }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-   if(!m_Slow.Create(m_Pair, 0, SlowPeriod,0,  MODE_EMA, PRICE_MEDIAN))
+   if(!m_Slow.Create(m_Pair, 0, SlowPeriod,0,  MODE_SMA, PRICE_CLOSE,params))
      {
       Print("Error initializing slow MA");
       return(false);
@@ -244,7 +237,7 @@ bool CGuruEx03_TwoMM::InitIndicators()
       Print("Error adding slow MA to indicator collection");
       return(false);
      }
-    */
+    
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -253,81 +246,51 @@ bool CGuruEx03_TwoMM::InitIndicators()
    return (true);
   }
 
-
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
 bool CGuruEx03_TwoMM::LookForEntry_StrategyCrossOver()
   {
-
-         if(!m_Symbol.RefreshRates())
-         return false;
-      m_Indis.Refresh();
-
-   //   double Slow_MA = m_Slow.GetData(0,0);
-      double Fast_MA = m_Fast.GetData(0,0);
-double Fast_MA_2 = m_Fast.GetData(1,0);
-double Fast_MA_3 = m_Fast.GetData(2,0);
-double Fast_MA_4 = m_Fast.GetData(3,0);
-double Fast_MA_5 = m_Fast.GetData(4,0);
-//double hysteresis = getHysteresis();
-double hysteresis = 0;
-return false;
-/*
-      if(!Checked)
-        {
-         Checked = true;
-         if(Fast_MA  > Slow_MA)
-            Long = true;
-         else
-            Long = false;
-        }
-
-      bool buy_signal =   !Long && (Fast_MA >= (Slow_MA + hysteresis));
-      bool sell_signal =   Long && (Fast_MA + hysteresis <= (Slow_MA ));
-
-    string msg = DoubleToString((Slow_MA)) + "_" + DoubleToString((Fast_MA))+ "_" + DoubleToString((hysteresis));
-
-      return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal,""));
-*/
-  }
-  
-bool CGuruEx03_TwoMM::LookForEntry_StrategyCrossOver_old()
-  {
-
+ 
+   
    if(!m_Symbol.RefreshRates())
       return false;
    m_Indis.Refresh();
-   double Slow_MA = m_Slow.GetData(0,0);
+
+   double Slow_MA;
+   if(UtilTerminal::isViewerModeAlt())
+           Slow_MA = m_Fast.GetData(3,0);
+   else
+            Slow_MA = m_Slow.GetData(0,0);
    double fast_MA = m_Fast.GetData(0,0);
 
-   double hysteresis;
-    if(!Checked)
-      {
-       Checked = true;
-       if(fast_MA > Slow_MA)
-          Long = true;
-       else
-          Long = false;
-      }
+   double hysteresis = 0;
 
+      
+      
     bool pre_buy_signal =   !Long && (fast_MA >= (Slow_MA));
-    bool pre_sell_signal =   Long && (fast_MA <= (Slow_MA));
+    bool pre_sell_signal =   !Short && (fast_MA <= (Slow_MA));
     
-    bool buy_signal,sell_signal;
+    bool buy_signal = false;
+    bool sell_signal = false;
     if(pre_buy_signal || pre_sell_signal)
-    {
        hysteresis = getHysteresis();
-       Print("Hysteresis is " + DoubleToString(hysteresis));
-     }
+
+     
     if(pre_buy_signal)
-       buy_signal =   !Long && (fast_MA >= (Slow_MA + hysteresis));
+       buy_signal =   !Long && (fast_MA >= (Slow_MA + hysteresis)); // if we are not already long
     if(pre_sell_signal)
-       sell_signal =   Long && (fast_MA + hysteresis <= (Slow_MA));
-    if(pre_buy_signal || pre_sell_signal)
+       sell_signal =   !Short && (fast_MA + hysteresis <= (Slow_MA)); // if we ar not alreafy shorrt
+    if(buy_signal || sell_signal)
     {
-      string msg = DoubleToString((Slow_MA)) + "_" + DoubleToString((fast_MA))+ "_" + DoubleToString((hysteresis));
-      Print("MSG : " + msg);
+    string msg;
+      if (buy_signal)
+       {
+       msg = "BUY SIGNAL ACTIVATED" + "LONG " + IntegerToString(Long) + " ..." + "Short " + IntegerToString(Short) + " ..." +  DoubleToString((Slow_MA)) + "_" + DoubleToString((fast_MA))+ "_" + DoubleToString((hysteresis));
+       }
+      if (sell_signal)
+      {
+          msg = "SELL SIGNAL ACTIVATED" + 
+      "LONG " + IntegerToString(Long) + " ..." + "Short " + IntegerToString(Short) + "_" + DoubleToString((fast_MA))+ "_" + DoubleToString((hysteresis));
+       }
+    //  Print("MSG : " + msg);
     }  
    return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal,""));
 

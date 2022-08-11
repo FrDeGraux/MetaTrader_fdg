@@ -36,6 +36,7 @@ protected:
    double            Points;
    bool              Initialized;
    bool              Long;
+   bool              Short;
    bool              InitIndicators();
    string            m_Pair;                    // Currency pair to trade
    // Trading object
@@ -163,7 +164,8 @@ CGuruEx03_Base::CGuruEx03_Base()
    ticks = 0;
    m_Indis = NULL;
    Initialized = false;
-
+   Short = false;
+   Long = false;
   }
 
 // File name (only if "Information output" == "The text file")
@@ -387,8 +389,11 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
         {
          //         this.writeDebugMsg(" Closing order " + StringToInteger(OrderNumber));
          m_Trade.PositionClose(m_Pair,ULONG_MAX,msg);  // Close previous short order
+         Short = false;
+                  Print("Closing deal :  Long is now " + IntegerToString(Long) + " short is now false ");
          Print(" Used Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_USED)));
          Print(" Max Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_LIMIT)));
+           
         }
       if(useStopTP)
         {
@@ -407,12 +412,15 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
          Print(" Max Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_LIMIT)));
          OrderNumber = m_Trade.ResultOrder();
          Long = true;
-
+         Short = false;
+         Print(" Long is now true, short is now false ");
          return(true);
         }
       else
         {
          OrderNumber = 0;
+         Long = false;
+           Print(" Long is now false due to failure");
         }
 
      }
@@ -426,6 +434,8 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
             Print(" Used Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_USED)));
             Print(" Max Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_LIMIT)));
             int y = 1;
+            Long = false; // i'm not long anymore
+           Print("Closing deal :  Long is now " + IntegerToString(Long) + " short is now " + IntegerToString(Short) );
            }
          if(useStopTP)
            {
@@ -439,14 +449,17 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
            {
             OrderNumber = m_Trade.ResultOrder();
 
-            Long = false;
+          
+               Short = true;
+                          Print("Closing deal :  Long is now " + IntegerToString(Long) + " short is now " + IntegerToString(Short) );
             Print(" Used Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_USED)));
             Print(" Max Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_LIMIT)));
             return(true);
            }
          else
            {
-
+            Short = false;
+                       Print(" Long is now false due to failure");
             OrderNumber = 0;
            }
         }

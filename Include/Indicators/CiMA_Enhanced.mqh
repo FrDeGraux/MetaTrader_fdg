@@ -27,7 +27,7 @@ public:
    //--- method of creation
    bool              Create(const string symbol,const ENUM_TIMEFRAMES period,
                             const int ma_period,const int ma_shift,
-                            const ENUM_MA_METHOD ma_method,const int applied);
+                            const ENUM_MA_METHOD ma_method,const int applied,CMqlParams&);
    //--- methods of access to indicator data
    double            Main(const int index) const;
    //--- method of identifying
@@ -61,7 +61,8 @@ CiMA_Enhanced::~CiMA_Enhanced(void)
 //+------------------------------------------------------------------+
 bool CiMA_Enhanced::Create(const string symbol,const ENUM_TIMEFRAMES period,
                   const int ma_period,const int ma_shift,
-                  const ENUM_MA_METHOD ma_method,const int applied)
+                  const ENUM_MA_METHOD ma_method,const int applied,CMqlParams& params)
+   //--- methods of access to indicator data)
   {
 //--- check history
    if(!SetSymbolPeriod(symbol,period))

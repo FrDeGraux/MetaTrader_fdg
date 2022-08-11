@@ -52,13 +52,6 @@ bool CICustomMA_Cyan::Create(const string symbol,const ENUM_TIMEFRAMES period,
                const int ma_period,const int ma_shift,
                const ENUM_MA_METHOD ma_method,const int applied)
   {
-   CMqlParams params;
-   if(!(CICustomMA::Create(symbol,period,ma_period,ma_shift,ma_method,applied)))
-      return false;
-    if(!BufferResize(bufferSize))
-     {
-         Print("Error CICustomMA_Cyan BufferResizeHysteresis MA");
-      return(false);  
-     }
+
      return true;
   }

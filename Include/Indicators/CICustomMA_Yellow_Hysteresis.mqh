@@ -26,10 +26,10 @@ private:
 public:
                      CiCustomMA_Yellow_Hysteresis(int _window_backward,double _long_ma_period);
                     ~CiCustomMA_Yellow_Hysteresis();
-
+   
    bool              Create(const string symbol,const ENUM_TIMEFRAMES period,
                const int ma_period,const int ma_shift,
-               const ENUM_MA_METHOD ma_method,const int applied);
+               const ENUM_MA_METHOD ma_method,const int applied,CMqlParams& params);
                
    bool   Initialize(const string symbol, 
                               const ENUM_TIMEFRAMES period, 
@@ -43,11 +43,19 @@ public:
 //+------------------------------------------------------------------+
 bool CiCustomMA_Yellow_Hysteresis::Create(const string symbol,const ENUM_TIMEFRAMES period,
                const int ma_period,const int ma_shift,
-               const ENUM_MA_METHOD ma_method,const int applied)
+               const ENUM_MA_METHOD ma_method,const int applied,CMqlParams& params)
   {
   
-   CMqlParams params;
-   if(!CICustomMA::Create(symbol,period,ma_period,ma_shift,ma_method,applied))
+
+   
+
+             if(params.Total() == 0) 
+               params.Set(this.ind_Name, TYPE_STRING); // set first pramc with value ind_name
+               
+            params.Set(window_backward, TYPE_UCHAR);
+            params.Set(long_ma_period, TYPE_UCHAR);
+                
+   if(!CICustomMA::Create(symbol,period,ma_period,ma_shift,ma_method,applied,params))
       return false;
       
 
