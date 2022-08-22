@@ -46,8 +46,8 @@ protected:
    // Slow moving average indicator
 
    CICustomATR              *m_ATR;
-   
-      CiProfit            *m_Profit;
+
+       CiProfit            *m_Equity;
   CiPosition         *m_Position;
   
   
@@ -247,47 +247,8 @@ bool CGuruEx03_Base::InitIndicators()
          return(false);
         }
      }
-   if(!UtilTerminal::isViewerMode())
-        return true;
-     if(m_Profit == NULL)
-     {
-      if((m_Profit = new CiProfit) == NULL)
-        {
-         Print("CGuruEx03_Base::Error creating m_Profit");
-         return(false);
-        }
-     }
-   if(!m_Profit.Create(m_Pair, 0))
-     {
-      Print("CGuruEx03_Base::Error initializing m_Profit");
-      return(false);
-     }
-// m_Slow.BuffSize(1);
-   if(!m_Indis.Add(m_Profit))
-     {
-      Print("CGuruEx03_Base::Error adding Profit to indicator collection");
-      return(false);
-     }
-   if(m_Position == NULL)
-     {
-      if((m_Position = new CiPosition) == NULL)
-        {
-         Print("CGuruEx03_Base::Error creating m_Position");
-         return(false);
-        }
-     }
-   if(!m_Position.Create(m_Pair, 0))
-     {
-      Print("CGuruEx03_Base::Error initializing m_Profit");
-      return(false);
-     }
-   if(!m_Indis.Add(m_Position))
-     {
-      Print("CGuruEx03_Base::Error adding CiPosition to indicator collection");
-      return(false);
-     }     
-        
-   if(m_ATR== NULL)
+     
+     if(m_ATR== NULL)
      {
 
       if((m_ATR = new CICustomATR()) == NULL)
@@ -307,7 +268,51 @@ bool CGuruEx03_Base::InitIndicators()
      {
       Print("Error adding m_ATR to indicator collection");
       return(false);
+     }   
+     
+     
+
+     if(m_Equity == NULL)
+     {
+      if((m_Equity = new CiProfit("EquityIndicator")) == NULL)
+        {
+         Print("CGuruEx03_Base::Error creating EquityIndicator");
+         return(false);
+        }
      }
+   if(!m_Equity.Create(m_Pair, 0))
+     {
+      Print("CGuruEx03_Base::Error initializing EquityIndicator");
+      return(false);
+     }
+// m_Slow.BuffSize(1);
+   if(!m_Indis.Add(m_Equity))
+     {
+      Print("CGuruEx03_Base::Error adding Profit to indicator collection");
+      return(false);
+     }
+
+
+ 
+   if(m_Position == NULL)
+     {
+      if((m_Position = new CiPosition) == NULL)
+        {
+         Print("CGuruEx03_Base::Error creating m_Position");
+         return(false);
+        }
+     }
+   if(!m_Position.Create(m_Pair, 0))
+     {
+      Print("CGuruEx03_Base::Error initializing m_Profit");
+      return(false);
+     }
+   if(!m_Indis.Add(m_Position))
+     {
+      Print("CGuruEx03_Base::Error adding CiPosition to indicator collection");
+      return(false);
+     }     
+     
 
    return (true);
 
@@ -368,16 +373,20 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
   {
    if(!m_Symbol.RefreshRates())
       return (false);
-   if(UtilTerminal::isViewerMode())
+   if(UtilTerminal::isViewerModeAlt())
    {
+  
         double equity = m_Symbol.computeSymbolEquity();
-        double positioning = m_Symbol.computeNetPositioning();
+         double positioning = 0;
+    //    double positioning = m_Symbol.computeNetPositioning();
       
-          string sBalanceVarName = m_Symbol.Name() + "_balance";
+
           string sEquityVarName = m_Symbol.Name() + "_equity";
+
           string sPositioningVarName = m_Symbol.Name() + "_netPositioning";
         
           GlobalVariableSet(sEquityVarName,equity);
+
           GlobalVariableSet(sPositioningVarName,positioning);
   } 
    double sl = 0;
@@ -388,9 +397,9 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
       if(OrderNumber > 0) // does an active position exist ?
         {
          //         this.writeDebugMsg(" Closing order " + StringToInteger(OrderNumber));
-         m_Trade.PositionClose(m_Pair,ULONG_MAX,msg);  // Close previous short order
+         if(m_Trade.PositionClose(m_Pair,ULONG_MAX,msg))
+            return false;
          Short = false;
-                  Print("Closing deal :  Long is now " + IntegerToString(Long) + " short is now false ");
          Print(" Used Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_USED)));
          Print(" Max Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_LIMIT)));
            
@@ -413,14 +422,14 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
          OrderNumber = m_Trade.ResultOrder();
          Long = true;
          Short = false;
-         Print(" Long is now true, short is now false ");
+      
          return(true);
         }
       else
         {
          OrderNumber = 0;
          Long = false;
-           Print(" Long is now false due to failure");
+
         }
 
      }
@@ -430,12 +439,12 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
         {
          if(OrderNumber > 0)
            {
-            m_Trade.PositionClose(m_Pair,ULONG_MAX,msg);  // Close previous long order
+            if(!m_Trade.PositionClose(m_Pair,ULONG_MAX,msg))  // Close previous long order
+               return false;
             Print(" Used Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_USED)));
             Print(" Max Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_LIMIT)));
             int y = 1;
             Long = false; // i'm not long anymore
-           Print("Closing deal :  Long is now " + IntegerToString(Long) + " short is now " + IntegerToString(Short) );
            }
          if(useStopTP)
            {
@@ -451,7 +460,7 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
 
           
                Short = true;
-                          Print("Closing deal :  Long is now " + IntegerToString(Long) + " short is now " + IntegerToString(Short) );
+     
             Print(" Used Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_USED)));
             Print(" Max Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_LIMIT)));
             return(true);
@@ -459,7 +468,7 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal,string msg)
          else
            {
             Short = false;
-                       Print(" Long is now false due to failure");
+         
             OrderNumber = 0;
            }
         }

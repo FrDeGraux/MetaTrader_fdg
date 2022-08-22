@@ -7,7 +7,7 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #include "Custom.mqh"
-#define INDICATOR_NAME "ProfitValue iFish"
+
 #define INITIAL_BUFFER_SIZE 1
 //https://stackoverflow.com/questions/52769369/mql5-pass-indicator-as-parameter
 #include <MqlParams.mqh>
@@ -16,8 +16,9 @@ class CiProfit : public CiCustom
   {
 private:
             static const int nBuffers;
+            string indicator_name;
 public:
-                     CiProfit();
+                     CiProfit(string);
                     ~CiProfit();
                     double            Main(const int index) const;
                     bool Create(  string symbol,ENUM_TIMEFRAMES tf);
@@ -31,7 +32,7 @@ public:
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CiProfit::CiProfit()
+CiProfit::CiProfit(string _indicator_name) : indicator_name(_indicator_name)
   {
   }
 //+------------------------------------------------------------------+
@@ -55,7 +56,7 @@ bool CiProfit::Create(  string symbol,ENUM_TIMEFRAMES tf)
 {
    // #1 Setup the MQL params array for the custom indicator.
    CMqlParams params;
-   params.Set(INDICATOR_NAME, TYPE_STRING);
+   params.Set(indicator_name, TYPE_STRING);
 
 
    int handle = -1;

@@ -13,10 +13,10 @@
 class CSymbolInfoCustom : public CSymbolInfo
   {
 private:
-   CArrayDouble*     cumulated_balance;
-   CArrayDouble*     cumulated_equity;
+
    string            sGlobalBalanceVarNameBalance;
-   double            balance;
+   double            new_balance;
+   double            previous_balance;
 
 public:
                      CSymbolInfoCustom();
@@ -26,7 +26,7 @@ public:
    double            computeSymbolEquity();
    double            computeSymbolFloatingEquity();
    double            computeNetPositioning();
-   void              addInitialBalance();
+
    int               nProcessedDeals;
   };
 //+------------------------------------------------------------------+
@@ -38,10 +38,11 @@ public:
 //+------------------------------------------------------------------+
 CSymbolInfoCustom::CSymbolInfoCustom()
   {
-   cumulated_balance = new CArrayDouble();
-   cumulated_equity = new CArrayDouble();
-   cumulated_equity.Add(0);
+
+
    int nProcessedDeals = 0;
+   new_balance = 0;
+   previous_balance = 0;
    sGlobalBalanceVarNameBalance = Name()  + "_balance";
 
   }
@@ -52,14 +53,7 @@ CSymbolInfoCustom::~CSymbolInfoCustom()
   {
   }
 //+------------------------------------------------------------------+
-void CSymbolInfoCustom::addInitialBalance()
-  {
-   if(cumulated_balance.Total() == 0)
-     {
-      if(GlobalVariableCheck("initial_balance"))
-         cumulated_balance.Add(GlobalVariableGet("initial_balance"));
-     }
-  }
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -67,10 +61,10 @@ double CSymbolInfoCustom::computeSymbolEquity()
   {
 
 
-   balance = computeSymbolBalance();
+   double balance = computeSymbolBalance();
+   double floating = computeSymbolFloatingEquity();
 
-   double res = balance + computeSymbolFloatingEquity();
-   return res;
+   return balance + floating;
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -135,7 +129,8 @@ double CSymbolInfoCustom::computeSymbolFloatingEquity()
    for(int i=0; i<pos_total; i++)
      {
       CPositionInfo m_position_info;
-      string msg_base  =Name() +  "_POSITION_" + IntegerToString(i) ;
+
+
       if(!m_position_info.SelectByIndex(i))
         {
          Print("CSymbolInfoCustom::Unable to select position " + IntegerToString(i));
@@ -147,14 +142,9 @@ double CSymbolInfoCustom::computeSymbolFloatingEquity()
       if(m_position_info.Symbol()==Name() && m_position_info.Profit()!=0)
         {
          new_equity = new_equity +m_position_info.Profit()+m_position_info.Swap()+m_position_info.Commission();
-         cumulated_equity.Add(new_equity);
-         msg = msg_base + " ( " + m_position_info.Symbol() + " ) " + " : new equity is : " + DoubleToString(new_equity);
+
         }
-      //--- Show a trade in the balance with this symbol. Consider swap and commission
 
-      //--- Otherwise, write the previous value
-
-      //  Print(msg);
      }
    return new_equity;
 
@@ -162,13 +152,25 @@ double CSymbolInfoCustom::computeSymbolFloatingEquity()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+
+
+//+------------------------------------------------------------------+
+
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 double CSymbolInfoCustom::computeSymbolBalance()
   {
 // Balance is realized, equity is floating one
 // @ epoch t, balance
-   addInitialBalance();
+// Balance is realized, equity is floating one
+// @ epoch t, balance
+
 //--- Find out the number of deals
    ::HistorySelect(0,LONG_MAX);
+   int nDeals = 0;
 //--- Find out the numberof deals
    int deals_total=::HistoryDealsTotal();
    string msg = "";
@@ -193,8 +195,8 @@ double CSymbolInfoCustom::computeSymbolBalance()
 
       if(m_deal_info.DealType()==DEAL_TYPE_BALANCE)
         {
-         double new_balance = AccountInfoDouble(ACCOUNT_BALANCE);
-         cumulated_balance.Add(new_balance);
+         new_balance = AccountInfoDouble(ACCOUNT_BALANCE);
+         previous_balance = new_balance;
 
          GlobalVariableSet("initial_balance",new_balance);
 
@@ -207,9 +209,33 @@ double CSymbolInfoCustom::computeSymbolBalance()
         {
          if(m_deal_info.Symbol()==Name() && m_deal_info.Profit()!=0)
            {
-            double new_balance = cumulated_balance.At(cumulated_balance.Total()-1) +m_deal_info.Profit()+m_deal_info.Swap()+m_deal_info.Commission();
-            cumulated_balance.Add(new_balance);
-            nProcessedDeals = nProcessedDeals+1;
+           
+           nDeals=nDeals + 1;
+           /*
+           if(Name() == "GBPUSD")
+           {
+           Print(" i has the value " + DoubleToString(i));
+           Print("PRofit is " + DoubleToString(m_deal_info.Profit()));
+           Print("Swap is " + DoubleToString(m_deal_info.Swap()));
+           Print("Commission is " + DoubleToString(m_deal_info.Commission()));
+           }
+           */
+             new_balance = previous_balance +m_deal_info.Profit()+m_deal_info.Swap()+m_deal_info.Commission();
+            previous_balance = new_balance;
+            nProcessedDeals = i+1;
+            /*
+                    if(Name() == "GBPUSD")
+           {
+            Print(" Previous balance is " + DoubleToString(previous_balance));
+            
+            Print(" new_balance balance is " + DoubleToString(new_balance));
+            
+            Print(" nDeals  is " + DoubleToString(nDeals));
+              Print(" processed_deals_already  is " + DoubleToString(processed_deals_already));
+                Print(" deals_total  is " + DoubleToString(deals_total));
+                
+            }
+            */
            }
         }
 
@@ -219,9 +245,11 @@ double CSymbolInfoCustom::computeSymbolBalance()
 
 
 
-  
 
-return cumulated_balance.At(cumulated_balance.Total()-1);
+
+   return new_balance;
+
+
 
   }
 
