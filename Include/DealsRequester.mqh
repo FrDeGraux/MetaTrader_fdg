@@ -6,7 +6,7 @@
 #property copyright "Copyright 2021, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
 #include <CSVDebugger.mqh>
-
+#include <utilString.mqh>
 class DealsRequester : public CSVDebugger
 {
 public : 
@@ -33,8 +33,8 @@ void DealsRequester::writeHeaders()
  
 
         
-         text=text + StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s",
-                           ";Volume",";Price",";Commission",";Swap",";Profit",";Symbol",";Comment");
+         text=text + StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s",
+                           ";Volume",";Price",";Commission",";Swap",";Swap_corrected"";Profit",";Symbol",";Comment");
  
          
               text += StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s",
@@ -111,13 +111,7 @@ void DealsRequester::writeTradeHistory()
          if(deal_type == DEAL_TYPE_BALANCE)
             continue;
 
- text+=StringFormat("%-19d ;%-19d ;%-19s ;%-19I64d ;%-19s ;%-19s  ;%-19s ;%-19d"
-                           ,deal_ticket,deal_order,time,deal_time_msc,type,entry,str_deal_reason,deal_position_id);
- 
 
-      
-         text+=StringFormat(";%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19s ;%-40s",
-                           deal_volume,deal_price,deal_commission,deal_swap,deal_profit,deal_symbol,deal_comment);
    
          //--- try to get oeders ticket_history_order 
          if(HistoryOrderSelect(deal_order))
@@ -147,6 +141,8 @@ void DealsRequester::writeTradeHistory()
 
             string   o_symbol          =HistoryOrderGetString(deal_order,ORDER_SYMBOL);
             string   o_comment         =HistoryOrderGetString(deal_order,ORDER_COMMENT);
+            string   str_swap_corrected = UtilString::fromCommentToSwapRate(o_comment);
+            double deal_swap_corrected = StringToDouble(str_swap_corrected);
             string   o_extarnal_id     =HistoryOrderGetString(deal_order,ORDER_EXTERNAL_ID);
 
             string str_o_time_setup       =TimeToString((datetime)o_time_setup,TIME_DATE|TIME_MINUTES|TIME_SECONDS);
@@ -158,7 +154,13 @@ void DealsRequester::writeTradeHistory()
             string str_o_type_time        =TimeToString((datetime)o_type_time,TIME_DATE|TIME_MINUTES|TIME_SECONDS);
             string str_o_reason           =EnumToString((ENUM_ORDER_REASON)o_reason);
 
+ text+=StringFormat("%-19d ;%-19d ;%-19s ;%-19I64d ;%-19s ;%-19s  ;%-19s ;%-19d"
+                           ,deal_ticket,deal_order,time,deal_time_msc,type,entry,str_deal_reason,deal_position_id);
+ 
 
+      
+         text+=StringFormat(";%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19s ;%-40s",
+                           deal_volume,deal_price,deal_commission,deal_swap,deal_swap_corrected,deal_profit,deal_symbol,deal_comment);
 
             text+=StringFormat(";%-19d ;%-19s ;%-19s ;%-19s ;%-19s ;%-19s ;%-19s",
                               o_ticket,str_o_time_setup,str_o_type,str_o_state,str_o_time_expiration,str_o_time_done

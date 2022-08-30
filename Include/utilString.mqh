@@ -10,7 +10,26 @@ class UtilString
 {
    public : 
       static string unPackStringArray(CArrayString* in,char sep=";");
+      static string fromCommentToSwapRate(string in);
 };
+string UtilString::fromCommentToSwapRate(string in_comment)
+{
+
+   string sep="_";                // A separator as a character
+   ushort u_sep; 
+   string result[];               // An array to get strings
+   //--- Get the separator code
+   u_sep=StringGetCharacter(sep,0);
+   //--- Split the string to substrings
+   int k=StringSplit(in_comment,u_sep,result);
+   CArrayString res;
+      if(!res.AssignArray(result))
+     {
+      Print("UtilString::fromCommentToSwapRate Array assigned error");
+      return "";
+     }
+     return res.At(res.Total()-1);
+}
 string UtilString::unPackStringArray(CArrayString* _in,char sep)
 {
 string res = "";
