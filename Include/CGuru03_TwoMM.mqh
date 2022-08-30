@@ -285,7 +285,10 @@ bool CGuruEx03_TwoMM::LookForEntry_StrategyCrossOver()
       sell_signal =   !Short && (fast_MA + hysteresis <= (Slow_MA)); // if we ar not alreafy shorrt
    if(buy_signal || sell_signal)
      {
-      msg = DoubleToString((Slow_MA)) + "_" + DoubleToString((fast_MA))+ "_" + DoubleToString((hysteresis));
+     int nDigits = 5;
+     if(StringFind(this.m_Symbol.Name(),"JPY") > -1)
+         nDigits = 3;
+      msg = DoubleToString((Slow_MA),nDigits) + "_" + DoubleToString((fast_MA),nDigits)+ "_" + DoubleToString((hysteresis),nDigits);
 
      }
    return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal,msg));

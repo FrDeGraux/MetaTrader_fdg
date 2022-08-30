@@ -15,7 +15,13 @@ class UtilTerminal
       static bool displayEquity();
       static bool displaySwap();
       static bool displayATRSLTP();
+      static bool printTicks();
 };
+
+bool UtilTerminal::printTicks()
+{
+   return false;
+}
 bool UtilTerminal::displaySwap()
 {
 if(!isViewerMode())
