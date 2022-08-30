@@ -10,6 +10,8 @@
 #include <Trade\DealInfo.mqh>
 #include <Trade\PositionInfo.mqh>
 #include <Arrays\ArrayDouble.mqh>
+   #include <Arrays\ArrayString.mqh>
+   #include <utilReader.mqh>
 class CSymbolInfoCustom : public CSymbolInfo
   {
 private:
@@ -17,17 +19,25 @@ private:
    string            sGlobalBalanceVarNameBalance;
    double            new_balance;
    double            previous_balance;
+  
 
+  
+  datetime           last_bar_date;
+  bool               setLastBarDate(datetime in_dt);
 public:
                      CSymbolInfoCustom();
                     ~CSymbolInfoCustom();
+   CArrayString      swap_rates_symbol_specific[];
    double            computeSymbolBalance();
    double            computeSymbolBalance_v2();
    double            computeSymbolEquity();
    double            computeSymbolFloatingEquity();
    double            computeNetPositioning();
-
+   double            computeSwapLong();
+   double            computeSwapShort();
+   bool              init(CArrayString &swap_rates[]);
    int               nProcessedDeals;
+      bool              hasNewBar(); 
   };
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -36,15 +46,18 @@ public:
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+
 CSymbolInfoCustom::CSymbolInfoCustom()
   {
 
-
+   last_bar_date = 0;
    int nProcessedDeals = 0;
    new_balance = 0;
    previous_balance = 0;
    sGlobalBalanceVarNameBalance = Name()  + "_balance";
-
+   
+   
+  
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -57,6 +70,19 @@ CSymbolInfoCustom::~CSymbolInfoCustom()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+double CSymbolInfoCustom::computeSwapLong()
+{
+
+
+return(UtilReader::getSwapValue(swap_rates_symbol_specific,TimeCurrent(),true));
+
+//From SWAPS and TimeCurrent
+}
+double CSymbolInfoCustom::computeSwapShort()
+{
+
+return(UtilReader::getSwapValue(swap_rates_symbol_specific,TimeCurrent(),false));
+}
 double CSymbolInfoCustom::computeSymbolEquity()
   {
 
@@ -258,3 +284,26 @@ double CSymbolInfoCustom::computeSymbolBalance()
 //+------------------------------------------------------------------+
 
 //+------------------------------------------------------------------+
+
+bool CSymbolInfoCustom::setLastBarDate(datetime in_dt)
+{
+last_bar_date = in_dt;
+return true;
+}
+bool CSymbolInfoCustom::hasNewBar()
+{
+datetime dt = SeriesInfoInteger(this.Name(),PERIOD_CURRENT,SERIES_LASTBAR_DATE);
+if(last_bar_date != dt)
+   return(setLastBarDate(dt));
+return false;
+
+}
+bool CSymbolInfoCustom::init(CArrayString& swap_rates[])
+{
+ UtilReader::filter_swap_array(swap_rates,swap_rates_symbol_specific,Name());
+   ArrayResize(swap_rates_symbol_specific,UtilReader::getSizeBeforeNULL(swap_rates_symbol_specific));
+   if (ArraySize(swap_rates_symbol_specific) == 0)
+      return false;
+
+  return true;
+}

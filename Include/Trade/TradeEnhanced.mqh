@@ -12,10 +12,34 @@ class CTradeEnhanced : public CTrade
 {
    public :
       bool PositionClose(const string symbol,const ulong deviation,string comment);
+      bool SelectPosition(const string symbol);
 };
-
+bool CTradeEnhanced::SelectPosition(const string symbol)
+  {
+   bool res=false;
+//---
+   if(IsHedging())
+     {
+      uint total=PositionsTotal();
+      for(uint i=0; i<total; i++)
+        {
+         string position_symbol=PositionGetSymbol(i);
+         if(position_symbol==symbol && m_magic==PositionGetInteger(POSITION_MAGIC))
+           {
+            res=true;
+            break;
+           }
+        }
+     }
+   else
+      res=PositionSelect(symbol);
+//---
+   return(res);
+  }
 bool CTradeEnhanced::PositionClose(const string symbol,const ulong deviation,string comment)
 {
+
+
    bool partial_close=false;
    int  retry_count  =10;
    uint retcode      =TRADE_RETCODE_REJECT;

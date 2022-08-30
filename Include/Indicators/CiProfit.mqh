@@ -15,10 +15,11 @@
 class CiProfit : public CiCustom
   {
 private:
-            static const int nBuffers;
+    
             string indicator_name;
+            int nBuffers;
 public:
-                     CiProfit(string);
+                     CiProfit(string,int);
                     ~CiProfit();
                     double            Main(const int index) const;
                     bool Create(  string symbol,ENUM_TIMEFRAMES tf);
@@ -28,11 +29,11 @@ public:
                               const MqlParam &params[]);
 
   };
-  const int CiProfit::nBuffers = 2;
+ // const int CiProfit::nBuffers = 2;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CiProfit::CiProfit(string _indicator_name) : indicator_name(_indicator_name)
+CiProfit::CiProfit(string _indicator_name,int _nBuffers) : indicator_name(_indicator_name), nBuffers(_nBuffers)
   {
   }
 //+------------------------------------------------------------------+

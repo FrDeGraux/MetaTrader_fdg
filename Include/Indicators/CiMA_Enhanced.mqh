@@ -15,9 +15,10 @@ protected:
    int               m_ma_shift;
    ENUM_MA_METHOD    m_ma_method;
    int               m_applied;
-   static const int bufferSize;
+private : 
+    const int bufferSize;
 public:
-                     CiMA_Enhanced(void);
+                     CiMA_Enhanced(int);
                     ~CiMA_Enhanced(void);
    //--- methods of access to protected data
    int               MaPeriod(void)        const { return(m_ma_period); }
@@ -40,14 +41,14 @@ protected:
                       const int ma_period,const int ma_shift,
                       const ENUM_MA_METHOD ma_method,const int applied);
   };
- const int CiMA_Enhanced::bufferSize = 1;
+
 //+------------------------------------------------------------------+
 //| Constructor                                                      |
 //+------------------------------------------------------------------+
-CiMA_Enhanced::CiMA_Enhanced(void) : m_ma_period(-1),
+CiMA_Enhanced::CiMA_Enhanced(int _bufferSize) : m_ma_period(-1),
                    m_ma_shift(-1),
                    m_ma_method(WRONG_VALUE),
-                   m_applied(-1)
+                   m_applied(-1),bufferSize(_bufferSize)
   {
   }
 //+------------------------------------------------------------------+
