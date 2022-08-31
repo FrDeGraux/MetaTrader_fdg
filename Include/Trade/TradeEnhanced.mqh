@@ -8,12 +8,30 @@
 
 #include <Trade\Trade.mqh>
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 class CTradeEnhanced : public CTrade
-{
-   public :
-      bool PositionClose(const string symbol,const ulong deviation,string comment);
-      bool SelectPosition(const string symbol);
-};
+  {
+public :
+   bool              PositionClose(const string symbol,const ulong deviation,string comment);
+   bool              PositionOpen(const string symbol,const ENUM_ORDER_TYPE order_type,const double volume,
+                                  const double price,const double sl,const double tp,string comment);
+   bool              SelectPosition(const string symbol);
+  };
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CTradeEnhanced::PositionOpen(const string symbol,const ENUM_ORDER_TYPE order_type,const double volume,
+                                  const double price,const double sl,const double tp,string comment)
+  {
+  comment = comment + "_" + "0"; // for swap corrected
+  return(CTrade::PositionOpen(symbol,order_type,volume,price,sl,tp,comment));
+  
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 bool CTradeEnhanced::SelectPosition(const string symbol)
   {
    bool res=false;
@@ -36,8 +54,11 @@ bool CTradeEnhanced::SelectPosition(const string symbol)
 //---
    return(res);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 bool CTradeEnhanced::PositionClose(const string symbol,const ulong deviation,string comment)
-{
+  {
 
 
    bool partial_close=false;
@@ -77,7 +98,7 @@ bool CTradeEnhanced::PositionClose(const string symbol,const ulong deviation,str
         }
       //--- setting request
       m_request.comment = comment;
-  
+
       m_request.action   =TRADE_ACTION_DEAL;
       m_request.symbol   =symbol;
       m_request.volume   =PositionGetDouble(POSITION_VOLUME);
@@ -119,7 +140,7 @@ bool CTradeEnhanced::PositionClose(const string symbol,const ulong deviation,str
    while(partial_close);
 //--- succeed
    return(true);
-}
+  }
 //+------------------------------------------------------------------+
 //| defines                                                          |
 //+------------------------------------------------------------------+

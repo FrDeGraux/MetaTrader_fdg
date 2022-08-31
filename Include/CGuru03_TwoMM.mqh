@@ -41,7 +41,7 @@ public :
 
    void              Deinit();
    bool              InitIndicators();
-   bool              Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[]);
+   bool              Init(string Pair,int slippage,double lot,int magic,bool useSLTP,datetime in_end_dt,CSVDebugger* _debugger,CArrayString& swap_rates[]);
    bool               LookForEntry_StrategyCrossOver();
    bool               LookForEntry_StrategyCrossOver_old();
 
@@ -137,10 +137,10 @@ CGuruEx03_TwoMM::CGuruEx03_TwoMM(int slowPeriod,int fastPeriod,int _hysterisis,i
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-bool CGuruEx03_TwoMM::Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[])
+bool CGuruEx03_TwoMM::Init(string Pair,int slippage,double lot,int magic,bool useSLTP,datetime in_end_dt,CSVDebugger* _debugger,CArrayString& swap_rates[])
   {
 
-   if(!CGuruEx03_Base::Init(magic,Pair,slippage,lot,ATR_MAPeriod,ATR_StopLossRange,ATR_TPRange,useSLTP,_debugger,swap_rates))
+   if(!CGuruEx03_Base::Init(magic,Pair,slippage,lot,ATR_MAPeriod,ATR_StopLossRange,ATR_TPRange,useSLTP,in_end_dt,_debugger,swap_rates))
       Print(" CGuruEx03_ThreeMM " + " unable to initiate");
    return(InitIndicators());
   }
