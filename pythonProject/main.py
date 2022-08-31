@@ -7,15 +7,33 @@ from os import path
 from itertools import combinations
 from math import floor
 
-# Press Shift+F10 to execute it or replace it with your code.
+def init_config() :
+    from configparser import ConfigParser
+    # instantiate
+    config = ConfigParser()
+    # parse existing file
+    config.read('config.ini')
+    return config
+config = init_config()
+sRunName = config.get('Run', 'sRunName')
+sBasePath = config.get('FilePth', 'sBasePath')
+sBasePath = sBasePath.replace("\\\\", "\\")
+
+sBasePath = path.join(sBasePath,sRunName)
+sBasePath = path.join(sBasePath,config.get('Inputs', 'Frequency'))
+
+sReportsPath = path.join(sBasePath,config.get('FilePth', 'sReportsPath'))
+sDurationReturnPath = path.join(sReportsPath,config.get('FilePth', 'sDurationPath'))
+sFileName = config.get('Inputs', 'sFileName')
+# Press Shift+F10 to FilePth it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import pandas as pd
 import numpy as np
-from datetime import timedelta
-from datetime import datetime
-symbolList =['EURUSD','GBPUSD','AUDUSD','AUDJPY','EURJPY']
-sBaseTickPath = 'C:\\Users\\franc\\Documents\\MetaTrader_tests\\Strategy_1_MM_crossover\\run_20_07'
-sFileName = '_2022_07_21 23_07_28.csv'
+
+
+
+
+
 balance_initial = 10000
 
 
@@ -35,35 +53,41 @@ balance_initial = 10000
 
 
 #1. #Profit TimeSeriees
-
-
-def plot_profits_all_symbols(in_df_positions,in_timeframe,sSymbolList) :       # plot_balance
+def plot_profits_all_symbols(in_df_positions,in_timeframe,sSymbolList,in_config) :       # plot_balance
     for symbol in sSymbolList :
         in_df_positions_filtered = filterBySymbol(in_df_positions,symbol)
         in_df_positions_filtered = in_df_positions_filtered[['Profit','Swap','Commission']]
         profits = in_df_positions_filtered.resample(in_timeframe).sum()
         profits_cumulated = profits.cumsum()
         profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
-        plot_time_graph(profits_cumulated.index.tolist(),profits_cumulated['Total'].values,symbol)
+
+        plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values, label=symbol)
+        plt.title(in_config.get('Returns', 'Graph_Title') + in_timeframe + "_" +symbol)
+        plt.legend(loc="best")
+        if symbol == 'ALL' :
+            plt.savefig(path.join(sReportsPath, sRunName + '_Profits' + symbol) + '.png')
+
+
+
         # filter
 
     # LEGENDE
 #2 Profit vs Time
-def plot_return_durations(in_df_positions,in_symbol) :
+def plot_return_durations(in_df_positions,in_symbol,in_config) :
 
     in_df_positions = filterBySymbol(in_df_positions,in_symbol)
 
     # plot return vs Trade duration (color is the profit)
-    mask = in_df_positions['Entry'] == 'DEAL_ENTRY_OUT'
+    mask = in_df_positions['Entry'] == in_config.get('Names', 'Entry_Out')
     df_sell = (in_df_positions[mask])
     df_sell['Reason_number'] = df_sell.apply(lambda row: from_entry_to_category(row), axis=1)
     toplot = []
     for row in df_sell.iterrows() :
         row = row[1]
-        val = row['PositionID(missedstringparameter)']
-        mask_position = (in_df_positions['PositionID(missedstringparameter)'] == val)
+        val = row[in_config.get('Names', 'PositionMissedParameters')]
+        mask_position = (in_df_positions[in_config.get('Names', 'PositionMissedParameters')] == val)
         df = in_df_positions[mask_position]
-        df = df[df['Entry'] == 'DEAL_ENTRY_IN']
+        df = df[df['Entry'] == in_config.get('Names', 'Entry_In')]
         if(len(df) > 1) :
             raise Exception('plot_return_durations::more than one purchase')
         entryIn = df['Time'].values[0]
@@ -71,43 +95,28 @@ def plot_return_durations(in_df_positions,in_symbol) :
        #  entryIn = datetime.strptime(df['Time'].values[0],'%Y.%m.%d %H:%M:%S ')
     #entryOut = datetime.strptime(row['Time'],'%Y.%m.%d %H:%M:%S ')
         toplot.append((entryOut-entryIn,(row['Profit']),(row['Reason_number'])))
-    titles = ('Hours','Euro','Profit vs durations for ' + in_symbol)
-    plot_scatter(in_symbol,toplot,titles)
+    titles = ('Hours','Euro',in_config.get('Run', 'sRunName') + "( " + in_config.get('Inputs', 'Frequency') + " ) " +  'Profit vs durations for ' + in_symbol)
+    toplot = sorted(toplot,key=lambda x: x[0],reverse=True)
+    plt.figure()
+    plot_scatter(in_symbol,toplot,titles,in_config)
+    plt.savefig(path.join(sDurationReturnPath,sRunName + '_durations_vs_returns_' + "_" + in_config.get('Inputs', 'Frequency') + "_" + in_symbol + '.png'))
 def plot_returns_duration_bySymbol() :
     pass
 #3. # of money (TP) vs # of money (SL)
-def plot_histogram_SL_TP(in_df_position,symbolList):
-    columns = tuple(symbolList)
-    rows = ['TP' 'SL' 'Expert']
 
-    mask_tp = in_df_position['Reason'] == 'DEAL_REASON_TP'
-    mask_sl = in_df_position['Reason'] == 'DEAL_REASON_SL'
-
-    df_tp = in_df_position[mask_tp]
-    df_sl = in_df_position[mask_sl]
-    df_other = in_df_position[~df_tp & ~df_sl]
-
-    # Get some pastel shades for the colors
-    colors = plt.cm.BuPu(np.linspace(0, 0.5, len(rows)))
-    fig = plt.figure()
-    ax = fig.add_axes([0, 0, 1, 1])
-    ax.bar(X + 0.00, data[0], color='b', width=0.25)
-    ax.bar(X + 0.25, data[1], color='g', width=0.25)
-    ax.bar(X + 0.50, data[2], color='r', width=0.25)
-    plt.show()
 def get_cmap(n, name='hsv'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
     RGB color; the keyword argument name must be a standard mpl colormap name.'''
     return plt.cm.get_cmap(name, n)
-def plot_histogram_SL_TP(in_df_position,symbolList) :
+def plot_histogram_SL_TP(in_df_position,in_config) :
     import numpy as np
     import matplotlib.pyplot as plt
 
     rows = ['TP' 'SL' 'Expert']
 
-    mask_tp = in_df_position['Reason'] == 'DEAL_REASON_TP'
-    mask_sl = in_df_position['Reason'] == 'DEAL_REASON_SL'
-    mask_expert = (in_df_position['Reason'] == 'DEAL_REASON_EXPERT') & (in_df_position['Entry'] == 'DEAL_ENTRY_OUT')
+    mask_tp = in_df_position['Reason'] == in_config.get('Names', 'Entry_TP')
+    mask_sl = in_df_position['Reason'] == in_config.get('Names', 'Entry_SL')
+    mask_expert = (in_df_position['Reason'] == in_config.get('Names', 'Entry_Expert')) & (in_df_position['Entry'] == in_config.get('Names', 'Entry_Out'))
 
 
     df_tp = in_df_position[mask_tp]
@@ -126,8 +135,11 @@ def plot_histogram_SL_TP(in_df_position,symbolList) :
 
     barWidth = 1
     edgeWidth = 0.12
-    color_maps = ['viridis','inferno','Greys']
+    color_maps = [config.get('SL_TP_Histogram', 'Color_TP'),config.get('SL_TP_Histogram', 'Color_SL'),config.get('SL_TP_Histogram', 'Color_Expert')]
     names = ['TP', 'SL', 'Expert']
+
+
+
 
     for count_X ,df_plt in enumerate(dataframes_processed) :
         cmap = get_cmap(len(df_plt),color_maps[count_X])
@@ -143,10 +155,10 @@ def plot_histogram_SL_TP(in_df_position,symbolList) :
             else :
                 sum = df_plt.iloc[0:count].sum()
                 plt.bar(names[count_X],row,linewidth = edgeWidth,bottom= sum,color=cmap(200),alpha = part,edgecolor='blue', width=barWidth,align = 'edge')
-    plt.title("SL/TP histogram")
-    plt.show()
+    plt.title(config.get('SL_TP_Histogram', 'Title_SL_TP_Histo'))
+    plt.savefig(path.join(sReportsPath,sRunName + '_SL_TP_Histogram.png' ))
 def filterBySymbol(in_df_position,in_symbol) :
-    if in_symbol == 'ALL' :
+    if in_symbol == config.get('Names', 'ALL_Symbol'):
         return in_df_position
     mask = in_df_position['Symbol'] == in_symbol
     in_df_position = in_df_position[mask]
@@ -159,23 +171,10 @@ def getSymbolList(in_df_positions) :
     symbolList = df_positions['Symbol'].unique()
     symbolList = [item.replace(' ', '') for item in symbolList]
     return symbolList
-def add_column_balances(in_df_positions) :
-    balances = []
-    in_df_positions = in_df_positions[['Profit', 'Symbol']]
-    for index, row in in_df_positions.iterrows():
 
-        df_positions_by_symbol = filterBySymbol(in_df_positions,row['Symbol'])
-        df_positions_by_symbol = filterByDateTimePrevious(df_positions_by_symbol,index)
-        balance  = balance_initial - df_positions_by_symbol['Profit'].sum()
-        balances.append(balance)
+def plot_return_correlation_ByPair(in_df_positions,symbol_one,symbol_two,in_count,in_nRowsTotalSubPlot,in_nColsTotalSubPlot,config) :
 
-    in_df_positions['balance'] = balances
-    return in_df_positions
-def plot_return_correlation(in_df_positions,symbol_one,symbol_two,in_count,in_nRowsTotalSubPlot,in_nColsTotalSubPlot) :
-    time_min =in_df_positions['Time'].min()
-    time_max =in_df_positions['Time'].max()
-    profits = in_df_positions.resample('W').sum()
-    mask = in_df_positions['Entry'] == 'DEAL_ENTRY_OUT'
+    mask = in_df_positions['Entry'] == config.get('Names', 'Entry_Out')
     in_df_positions = (in_df_positions[mask])
     df_to_process = [filterBySymbol(in_df_positions,item) for item in [symbol_two,symbol_one]]
     df_processed = []
@@ -196,58 +195,75 @@ def plot_return_correlation(in_df_positions,symbol_one,symbol_two,in_count,in_nR
     res = pd.concat(df_processed,axis=1)
     res = res.dropna()
     res.columns = ['Return_' + symbol_one, 'Return_' + symbol_two]
-    plt.subplot(in_nRowsTotalSubPlot, in_nColsTotalSubPlot, in_count)
-    plt.scatter(res.iloc[:,0], res.iloc[:,1],s =5, label=('correlations' + symbol_one + '_' + symbol_two))
+    ax1 = plt.subplot(in_nRowsTotalSubPlot, in_nColsTotalSubPlot, in_count)
+    plt.scatter(res.iloc[:,0], res.iloc[:,1],s = int(config.get('Correlations', 'Correlations_Marker_Size')), label=('correlations' + symbol_one + '_' + symbol_two))
+
+    ax1.set_xlim([-0.05, 0.05])
+    if((symbol_one == ('ALL') or symbol_two == 'ALL')):
+        ax1.set_xlim([float(config.get('Correlations', 'Correlations_xlim_all_min')), float(config.get('Correlations', 'Correlations_xlim_all_max'))])
+    else :
+        ax1.set_xlim([float(config.get('Correlations', 'Correlations_xlim_symbol_min')), float(config.get('Correlations', 'Correlations_xlim_symbol_max'))])
 
 
-    plt.xlabel(symbol_one,fontsize = 8)
-    plt.ylabel(symbol_two,fontsize =8)
+     # plt.xlabel(symbol_one,fontsize =  config.get('Correlations', 'Correlations_Font_Size'))
+    #plt.ylabel(symbol_two,fontsize = config.get('Correlations', 'Correlations_Font_Size'))
     m, b = np.polyfit(res.iloc[:,0], res.iloc[:,1], 1)
 
     plt.plot(res.iloc[:,0], m * (res.iloc[:,0]) + b)
-    plt.title(( symbol_one + '_' + symbol_two + '(' + str(round(m,4)) + ')'),fontsize=8)
+    plt.title(( symbol_one + '_' + symbol_two + '(' + str(round(m,4)) + ')'),fontsize= config.get('Correlations', 'Correlations_Font_Size'))
 
-    plt.subplots_adjust(wspace = 0.8,hspace = 1)
+    plt.subplots_adjust(wspace =float(config.get('Correlations', 'Correlations_wspace')),hspace = float(config.get('Correlations', 'Correlations_hspace')))
+def plot_return_correlation_All(symbolList) :
+    list_combinations = list(combinations(symbolList, 2))
+    in_nRowsTotalSubPlot = floor((len(list_combinations)/ int(config.get('Correlations', 'Correlations_NColumns'))))+1
+    in_nColsTotalSubPlot = 0
+    if len(list_combinations) <  int(config.get('Correlations', 'Correlations_NColumns')):
+        in_nColsTotalSubPlot = len(list_combinations)
+    else :
+        in_nColsTotalSubPlot = int(config.get('Correlations', 'Correlations_NColumns'))
 
+    for count,item in enumerate(list_combinations):
+        plot_return_correlation_ByPair(df_positions,item[0], item[1],count+1,in_nRowsTotalSubPlot,in_nColsTotalSubPlot,config)
 
-
+    plt.suptitle( config.get('Correlations', 'SupTilteName') + " (" + config.get('Run', 'sRunName') + ")" + " (" + config.get('Inputs', 'Frequency') + ")",fontsize= int(config.get('Correlations', 'Correlations_SupTitleSize')))
+    plt.show()
+    plt.savefig(path.join(sReportsPath,sRunName +'_Correlations.png'))
 if __name__ == '__main__':
 
 
-    df_positions = read_positions(path.join(sBaseTickPath,sFileName))
+    string_val = config.get('Names', 'Entry_Out')
+    print(string_val)
+
+    df_positions = read_positions(path.join(sBasePath,sFileName))
+
+
 
     symbolList= getSymbolList(df_positions)
     symbolList.append('ALL')
+    plt.figure(3)
+    [plot_return_durations(df_positions, symbol, config) for symbol in symbolList]
 
-    list_combinations = list(combinations(symbolList, 2))
-    in_nRowsTotalSubPlot = floor((len(list_combinations)/4))+1
-    in_nColsTotalSubPlot = 0
-    if len(list_combinations) < 4 :
-        in_nColsTotalSubPlot = len(list_combinations)
-    else :
-        in_nColsTotalSubPlot = 4
-
-    for count,item in enumerate(list_combinations):
-        plot_return_correlation(df_positions,item[0], item[1],count+1,in_nRowsTotalSubPlot,in_nColsTotalSubPlot)
-    plt.suptitle('Returns correlations (Weekly) ',fontsize=10)
-    plt.show()
-    df_positions['PositionID(missedstringparameter)']  = (df_positions['PositionID(missedstringparameter)']).astype(str) + df_positions['Symbol']
-
-    plot_histogram_SL_TP(df_positions,symbolList)
+    plt.figure(4)
+  #  plt.figure(4,dpi=300)
+    plot_return_correlation_All(symbolList)
 
 
 
-
+    df_positions[ config.get('Names', 'PositionMissedParameters')]  = (df_positions[ config.get('Names', 'PositionMissedParameters')]).astype(str) + df_positions['Symbol']
     plt.figure(1)
-    plot_profits_all_symbols(df_positions,'60min',symbolList)
-    plt.legend(loc="upper left")
-    plt.show()
+    plot_histogram_SL_TP(df_positions,config)
+
+
+
+
+    plt.figure(2)
+    plot_profits_all_symbols(df_positions,'60min',symbolList,config)
+
 
     # 2. Duration vs Profit
-    plt.figure(2)
-    [plot_return_durations(df_positions,symbol) for symbol in symbolList]
 
     # 3. # of money (TP) vs # of money (SL)
     pass
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    #4 For each out, plot Hysteresis_entry and Hysteresis_Out : intensity is the profit
+

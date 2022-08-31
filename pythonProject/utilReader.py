@@ -1,8 +1,8 @@
 import pandas as pd
 import os
 def read_positions(sBaseTickPath) :
+   # df_positions = pd.read_csv(os.path.join(sBaseTickPath), sep="\t", encoding='utf-16')
     df_positions = pd.read_csv(os.path.join(sBaseTickPath), sep=";", encoding='utf-16')
-
     df_positions = df_positions[[' Ticket               ','Entry               ','Time                ','Reason              ','Position ID        (missed string parameter)','Volume              ','Price               ','Commission          ','Swap                ','Profit              ','Symbol              ','Comment            ','sl                  ','tp                  ']]
     df_positions.columns = df_positions.columns.str.replace(' ', '')
     df_positions['Symbol'] = df_positions['Symbol'].str.replace(' ', '')
