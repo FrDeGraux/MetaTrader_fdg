@@ -287,8 +287,8 @@ bool CGuruEx03_TwoMM::LookForEntry_StrategyCrossOver()
      {
      int nDigits = 5;
      if(StringFind(this.m_Symbol.Name(),"JPY") > -1)
-         nDigits = 3;
-      msg = DoubleToString((Slow_MA),nDigits) + "_" + DoubleToString((fast_MA),nDigits)+ "_" + DoubleToString((hysteresis),nDigits);
+         nDigits = 3; 
+      msg = DoubleToString((Slow_MA),nDigits) + "_" + DoubleToString((fast_MA),nDigits)+ "_" + DoubleToString((double)(hysteresis)/this.m_Symbol.getPointSize(),nDigits);
 
      }
    return(CGuruEx03_Base::CheckEntry(buy_signal,sell_signal,msg));

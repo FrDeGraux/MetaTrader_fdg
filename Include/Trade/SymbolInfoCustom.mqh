@@ -34,7 +34,8 @@ public:
    double            computeSymbolFloatingEquity();
    double            computeNetPositioning();
    double            computeSwapLong();
-   double            computeSwapShort();
+   double            computeSwapShort();   
+   double            getPointSize();
    bool              init(CArrayString &swap_rates[]);
    int               nProcessedDeals;
       bool              hasNewBar(); 
@@ -42,6 +43,7 @@ public:
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -307,3 +309,9 @@ bool CSymbolInfoCustom::init(CArrayString& swap_rates[])
 
   return true;
 }
+
+ double CSymbolInfoCustom::getPointSize()  
+ {
+ return(SymbolInfoDouble(this.Name(),SYMBOL_POINT));
+ }
+ 
