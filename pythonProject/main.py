@@ -6,23 +6,17 @@ import matplotlib.pyplot as plt
 from os import path
 from itertools import combinations
 from math import floor
-
-def init_config() :
-    from configparser import ConfigParser
-    # instantiate
-    config = ConfigParser()
-    # parse existing file
-    config.read('config.ini')
-    return config
+from utilConfig import init_config
+from utilData import filterBySymbol,getSymbolList,unpackComment_MM
 config = init_config()
 sRunName = config.get('Run', 'sRunName')
 sBasePath = config.get('FilePth', 'sBasePath')
 sBasePath = sBasePath.replace("\\\\", "\\")
 
 sBasePath = path.join(sBasePath,sRunName)
-sBasePath = path.join(sBasePath,config.get('Inputs', 'Frequency'))
+sBasePathFreq = path.join(sBasePath,config.get('Inputs', 'Frequency'))
 
-sReportsPath = path.join(sBasePath,config.get('FilePth', 'sReportsPath'))
+sReportsPath = path.join(sBasePathFreq,config.get('FilePth', 'sReportsPath'))
 sDurationReturnPath = path.join(sReportsPath,config.get('FilePth', 'sDurationPath'))
 sFileName = config.get('Inputs', 'sFileName')
 # Press Shift+F10 to FilePth it or replace it with your code.
@@ -51,12 +45,44 @@ balance_initial = 10000
 # Plot BySymbol    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 
+def plot_profits_all_timeframe(in_config) :
+    sFileName_H1 = in_config.get('AllInputs', 'sFileName_H1')
+    sFileName_H4 = in_config.get('AllInputs', 'sFileName_H4')
+    sFileName_D1 =  in_config.get('AllInputs', 'sFileName_D1')
+    sFileName_W1 = in_config.get('AllInputs', 'sFileName_W1')
+    Frequencies_1 = in_config.get('AllInputs', 'Frequencies_1')
+    Frequencies_2 = in_config.get('AllInputs', 'Frequencies_2')
+    Frequencies_3 = in_config.get('AllInputs', 'Frequencies_3')
+    Frequencies_4 = in_config.get('AllInputs', 'Frequencies_4')
+    in_timeframe = in_config.get('Returns', 'TimeFrame')
+    Frequencies = [Frequencies_1,Frequencies_2,Frequencies_3,Frequencies_4]
+    sFileNames = [sFileName_H1,sFileName_H4,sFileName_D1,sFileName_W1]
+
+    sFilePaths = [path.join(sBasePath,item[0],item[1]) for item in map(list,zip(Frequencies,sFileNames))]
+    list_df_position = [read_positions(item) for item in sFilePaths]
+
+
+    for freq,df_positions in zip(Frequencies,list_df_position):
+
+        df_positions_filtered = df_positions[['Profit', 'Swap_Real', 'Commission']]
+        profits = df_positions_filtered.resample(in_timeframe).sum()
+        profits_cumulated = profits.cumsum()
+        profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
+
+        plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values, label=freq)
+        plt.title(in_config.get('Returns', 'Graph_Title') + "_ALL TIMEFRAMES")
+        plt.legend(loc="best")
+
+    plt.savefig(path.join(sBasePath,'All_returns' + '.png'))
 
 #1. #Profit TimeSeriees
-def plot_profits_all_symbols(in_df_positions,in_timeframe,sSymbolList,in_config) :       # plot_balance
+def plot_profits_all_symbols(in_df_positions,sSymbolList,in_config) :       # plot_balance
+    in_timeframe = in_config.get('Returns', 'TimeFrame')
+
     for symbol in sSymbolList :
-        in_df_positions_filtered = filterBySymbol(in_df_positions,symbol)
-        in_df_positions_filtered = in_df_positions_filtered[['Profit','Swap','Commission']]
+        in_df_positions_filtered = filterBySymbol(in_df_positions,symbol,in_config)
+
+        in_df_positions_filtered = in_df_positions_filtered[['Profit','Swap_Real','Commission']]
         profits = in_df_positions_filtered.resample(in_timeframe).sum()
         profits_cumulated = profits.cumsum()
         profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
@@ -75,7 +101,7 @@ def plot_profits_all_symbols(in_df_positions,in_timeframe,sSymbolList,in_config)
 #2 Profit vs Time
 def plot_return_durations(in_df_positions,in_symbol,in_config) :
 
-    in_df_positions = filterBySymbol(in_df_positions,in_symbol)
+    in_df_positions = filterBySymbol(in_df_positions,in_symbol,in_config)
 
     # plot return vs Trade duration (color is the profit)
     mask = in_df_positions['Entry'] == in_config.get('Names', 'Entry_Out')
@@ -157,30 +183,22 @@ def plot_histogram_SL_TP(in_df_position,in_config) :
                 plt.bar(names[count_X],row,linewidth = edgeWidth,bottom= sum,color=cmap(200),alpha = part,edgecolor='blue', width=barWidth,align = 'edge')
     plt.title(config.get('SL_TP_Histogram', 'Title_SL_TP_Histo'))
     plt.savefig(path.join(sReportsPath,sRunName + '_SL_TP_Histogram.png' ))
-def filterBySymbol(in_df_position,in_symbol) :
-    if in_symbol == config.get('Names', 'ALL_Symbol'):
-        return in_df_position
-    mask = in_df_position['Symbol'] == in_symbol
-    in_df_position = in_df_position[mask]
-    return in_df_position
+
 def filterByDateTimePrevious(in_df_position,in_dt) :
     mask = in_df_position['Symbol'] < in_dt
     in_df_position = in_df_position[mask]
     return in_df_position
-def getSymbolList(in_df_positions) :
-    symbolList = df_positions['Symbol'].unique()
-    symbolList = [item.replace(' ', '') for item in symbolList]
-    return symbolList
+
 
 def plot_return_correlation_ByPair(in_df_positions,symbol_one,symbol_two,in_count,in_nRowsTotalSubPlot,in_nColsTotalSubPlot,config) :
 
     mask = in_df_positions['Entry'] == config.get('Names', 'Entry_Out')
     in_df_positions = (in_df_positions[mask])
-    df_to_process = [filterBySymbol(in_df_positions,item) for item in [symbol_two,symbol_one]]
+    df_to_process = [filterBySymbol(in_df_positions,item,config) for item in [symbol_two,symbol_one]]
     df_processed = []
     for item in df_to_process :
 
-        item = item['Profit'] + item['Commission'] + item['Swap']
+        item = item['Profit'] + item['Commission'] + item['Swap_Real']
         item = pd.DataFrame(item.resample('W').sum())
         item['Balance'] = item.cumsum()
         item['Balance'] = item['Balance'].shift(periods=1)
@@ -229,12 +247,12 @@ def plot_return_correlation_All(symbolList) :
     plt.show()
     plt.savefig(path.join(sReportsPath,sRunName +'_Correlations.png'))
 if __name__ == '__main__':
-
+    plot_profits_all_timeframe(config)
 
     string_val = config.get('Names', 'Entry_Out')
     print(string_val)
 
-    df_positions = read_positions(path.join(sBasePath,sFileName))
+    df_positions = read_positions(path.join(sBasePathFreq,sFileName))
 
 
 
@@ -257,7 +275,9 @@ if __name__ == '__main__':
 
 
     plt.figure(2)
-    plot_profits_all_symbols(df_positions,'60min',symbolList,config)
+    plot_profits_all_symbols(df_positions,symbolList,config)
+
+
 
 
     # 2. Duration vs Profit
