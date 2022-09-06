@@ -1,5 +1,6 @@
 from utilMapping import from_entry_to_category
 import pandas as pd
+
 import numpy as np
 def compute_loss_SL (in_df_position) :
 
@@ -47,13 +48,23 @@ def filterBySymbol(in_df_position,in_symbol,in_config) :
 def compute_reward_tp(in_df_position) :
     mask_tp = in_df_position['Reason'] == 'DEAL_REASON_TP'
     df_tp = in_df_position[mask_tp]
-    df_tp = df_tp[['Profit', 'Swap', 'Commission']]
+    df_tp = df_tp[['Profit', 'SwapReal', 'Commission']]
     df_tp = df_tp.sum(axis=1)
     return df_tp
 def compute_profit_other(in_df_position) :
     mask_tp = in_df_position['Reason'] == 'DEAL_REASON_TP'
     mask_sl = in_df_position['Reason'] == 'DEAL_REASON_SL'
     df_other = in_df_position[~mask_tp & ~mask_sl]
-    df_other = df_other[['Profit', 'Swap', 'Commission']]
+    df_other = df_other[['Profit', 'SwapReal', 'Commission']]
     df_other = df_other.sum(axis=1)
     return df_other
+def filter_on_entry_datetimes(in_df,startTime,in_dt_second) :
+    filtered_df = in_df[(in_df['TimeIn_Date'] >= startTime)]
+    filtered_df = filtered_df[(in_df['TimeIn_Date'] < (in_dt_second))]
+
+    return(filtered_df)
+
+def filter_on_entry_datetimes_cumulative(in_df,startTime,in_dt_second) :
+    filtered_df = in_df[(in_df['TimeIn_Date'] < (in_dt_second))]
+
+    return(filtered_df)

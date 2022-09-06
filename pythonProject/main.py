@@ -9,11 +9,12 @@ from math import floor
 from utilConfig import init_config
 from utilData import filterBySymbol,getSymbolList,unpackComment_MM
 config = init_config()
-sRunName = config.get('Run', 'sRunName')
-sBasePath = config.get('FilePth', 'sBasePath')
-sBasePath = sBasePath.replace("\\\\", "\\")
+sRunName = config.get('Run', 'sRunName_SMA')
+sMotherPath = config.get('FilePth', 'sBasePath')
+sMotherPath = sMotherPath.replace("\\\\", "\\")
 
-sBasePath = path.join(sBasePath,sRunName)
+
+sBasePath = path.join(sMotherPath,sRunName)
 sBasePathFreq = path.join(sBasePath,config.get('Inputs', 'Frequency'))
 
 sReportsPath = path.join(sBasePathFreq,config.get('FilePth', 'sReportsPath'))
@@ -44,36 +45,71 @@ balance_initial = 10000
 # Plot(return,régime)    # Use a breakpoint in the code line below to debug your script.
 # Plot BySymbol    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
-
-def plot_profits_all_timeframe(in_config) :
-    sFileName_H1 = in_config.get('AllInputs', 'sFileName_H1')
-    sFileName_H4 = in_config.get('AllInputs', 'sFileName_H4')
-    sFileName_D1 =  in_config.get('AllInputs', 'sFileName_D1')
-    sFileName_W1 = in_config.get('AllInputs', 'sFileName_W1')
+def run(in_config) :
     Frequencies_1 = in_config.get('AllInputs', 'Frequencies_1')
     Frequencies_2 = in_config.get('AllInputs', 'Frequencies_2')
     Frequencies_3 = in_config.get('AllInputs', 'Frequencies_3')
     Frequencies_4 = in_config.get('AllInputs', 'Frequencies_4')
+    Frequencies = [Frequencies_1, Frequencies_2, Frequencies_3, Frequencies_4]
+
+
+    sFileName_H1_one = in_config.get('AllInputs', 'sFileName_H1_SMA')
+    sFileName_H4_one = in_config.get('AllInputs', 'sFileName_H4_SMA')
+    sFileName_D1_one =  in_config.get('AllInputs', 'sFileName_D1_SMA')
+    sFileName_W1_one = in_config.get('AllInputs', 'sFileName_W1_SMA')
+
+
+    sFileName_H1_two = in_config.get('AllInputs', 'sFileName_H1_EMA')
+    sFileName_H4_two = in_config.get('AllInputs', 'sFileName_H4_EMA')
+    sFileName_D1_two = in_config.get('AllInputs', 'sFileName_D1_EMA')
+    sFileName_W1_two = in_config.get('AllInputs', 'sFileName_W1_EMA')
+
+    sFileOne = [sFileName_H1_one,sFileName_H4_one,sFileName_D1_one,sFileName_W1_one]
+    sFileTwo = [sFileName_H1_two,sFileName_H4_two,sFileName_D1_two,sFileName_W1_two]
+
+    sListRunNames = [config.get('Run', 'sRunName_SMA'),config.get('Run', 'sRunName_EMA')]
+    list_Styles = [config.get('Styles', 'Style_SMA_Returns'),config.get('Styles', 'Style_EMA_Returns')]
+    plot_profits_many_runs(Frequencies,sListRunNames,sFileOne,sFileTwo,list_Styles,in_config)
+
+def plot_profits_many_runs(in_frequencies,in_listRunNames,in_sFileName_One,in_sFileName_Two,in_Styles,in_config) :
+    sListBasePath = [path.join(sMotherPath,item) for item in in_listRunNames]
+
+    [plot_profits_all_timeframes(item[2],item[0], in_frequencies, item[1],item[3], in_config) for item in zip([in_sFileName_One,in_sFileName_Two],sListBasePath,in_listRunNames,in_Styles)]
+
+
+    plt.title(in_config.get('Returns', 'Graph_Title') + in_config.get('Run', 'sRunNameSMA') + " VS " + in_config.get('Run', 'sRunNameEMA') + "_" + "_ALL TIMEFRAMES")
+    plt.legend(loc="best")
+    plt.savefig(path.join(sMotherPath, 'All_returns' + '.png'))
+
+
+
+def plot_profits_all_timeframes(in_sRun,in_sFileNameList,in_FrequencyList,in_sBasePath,in_sListLineStyles,in_config) : # for one run
+
+    for sFilePath, freq in zip(in_sFileNameList, in_FrequencyList):
+        plot_profit_timeframe(in_sRun,path.join(in_sBasePath,freq,sFilePath),freq,in_sListLineStyles, in_config)
+    plt.title(in_config.get('Returns', 'Graph_Title')  + "_" + "_MANY RUNS " + " TIMEFRAMES")
+    plt.legend(loc="best")
+    plt.show()
+    plt.savefig(path.join(in_sBasePath, 'All_returns' + '.png'))
+
+
+
+
+
+def plot_profit_timeframe(in_sRunName,sFilePath,in_sFreq,style,in_config) :
+
+    sFilePath = path.join(sBasePath,sFilePath)
+    df_positions = read_positions(sFilePath)
     in_timeframe = in_config.get('Returns', 'TimeFrame')
-    Frequencies = [Frequencies_1,Frequencies_2,Frequencies_3,Frequencies_4]
-    sFileNames = [sFileName_H1,sFileName_H4,sFileName_D1,sFileName_W1]
 
-    sFilePaths = [path.join(sBasePath,item[0],item[1]) for item in map(list,zip(Frequencies,sFileNames))]
-    list_df_position = [read_positions(item) for item in sFilePaths]
+    df_positions_filtered = df_positions[['Profit', 'SwapReal', 'Commission']]
+    profits = df_positions_filtered.resample(in_timeframe).sum()
+    profits_cumulated = profits.cumsum()
+    profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
 
 
-    for freq,df_positions in zip(Frequencies,list_df_position):
+    plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values,label = (in_sFreq + '_' + in_sRunName),linestyle= style)
 
-        df_positions_filtered = df_positions[['Profit', 'Swap_Real', 'Commission']]
-        profits = df_positions_filtered.resample(in_timeframe).sum()
-        profits_cumulated = profits.cumsum()
-        profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
-
-        plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values, label=freq)
-        plt.title(in_config.get('Returns', 'Graph_Title') + "_ALL TIMEFRAMES")
-        plt.legend(loc="best")
-
-    plt.savefig(path.join(sBasePath,'All_returns' + '.png'))
 
 #1. #Profit TimeSeriees
 def plot_profits_all_symbols(in_df_positions,sSymbolList,in_config) :       # plot_balance
@@ -247,7 +283,7 @@ def plot_return_correlation_All(symbolList) :
     plt.show()
     plt.savefig(path.join(sReportsPath,sRunName +'_Correlations.png'))
 if __name__ == '__main__':
-    plot_profits_all_timeframe(config)
+    run(config)
 
     string_val = config.get('Names', 'Entry_Out')
     print(string_val)

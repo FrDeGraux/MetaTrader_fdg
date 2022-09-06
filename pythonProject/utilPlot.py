@@ -1,6 +1,44 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from utilConfig import build_working_path
+from os import path
+def plot_histo_fixed_hysteresis(in_item_list,in_cfg,isCumulative) :
+        sFrequency =  in_cfg.get('Inputs', 'Frequency')
+        sFileName = in_cfg.get('FilePth', 'sFileNameFixedHysteresisSummary')
+        if isCumulative :
+            sFileName = sFrequency + '_cumulative' + sFileName + '.png'
+        else :
+            sFileName = sFrequency + '_' + sFileName + '.png'
+        sFileName = path.join(build_working_path(in_cfg),sFileName)
+
+
+
+        sFileNameCSV = in_cfg.get('FilePth', 'sFileNameFixedHysteresisMQLInput')
+
+
+        if isCumulative :
+            sTitle = sFrequency + "_cumulative_Fixed_spread"
+            sFileNameCSV = sFrequency + '_cumulative' + sFileNameCSV + '.csv'
+        else :
+            sTitle = sFrequency + "Fixed_spread"
+            sFileNameCSV = sFrequency + '_' + sFileNameCSV + '.csv'
+
+
+        sFileNameCSV = path.join(build_working_path(in_cfg),sFileNameCSV)
+        sTitle = ""
+
+        df = pd.DataFrame(in_item_list, columns=['Symbol', 'Year', 'Fixed_spread'])
+        df.to_csv(sFileNameCSV,sep=';',index = False)
+
+        df = df.pivot("Symbol", "Year", "Fixed_spread")
+        df.plot(kind='bar')
+
+        plt.title(sTitle)
+
+        plt.savefig(sFileName)
+        pass
 def plot_time_graph(in_dt,in_values,in_legendValue) :
     plt.plot(in_dt,in_values,label = in_legendValue)
     pass

@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-
+from utilData import unpackComment_MM
 def read_positions(sBaseTickPath) :
    # df_positions = pd.read_csv(os.path.join(sBaseTickPath), sep="\t", encoding='utf-16')
     df_positions = pd.read_csv(os.path.join(sBaseTickPath), sep=";", encoding='utf-16')
