@@ -10,7 +10,7 @@ from utilData import filterBySymbol,getSymbolList,filter_on_entry_datetimes,filt
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from os import path
-
+import os
 def tot_hours(in_row) :
     return in_row.total_seconds()/3600
 
@@ -141,7 +141,7 @@ def build_all_hyper_cubes(in_df,in_symbol,in_threshold,in_cfg) :
     for i in range(diff.years):
         startTime = dtStart +  relativedelta(years=i)
         filtered_df = filter_on_entry_datetimes(in_df,startTime,startTime+ relativedelta(years=1))
-        res.append((in_symbol,(dtStart + relativedelta(years=i)).year ,build_hyper_cube(filtered_df,startTime,startTime+ relativedelta(years=1),in_symbol,in_threshold,in_cfg,isCumulative = True)))
+        res.append(((dtStart + relativedelta(years=i)).strftime("%m/%d/%Y") ,in_symbol,build_hyper_cube(filtered_df,startTime,startTime+ relativedelta(years=1),in_symbol,in_threshold,in_cfg,isCumulative = False)))
     return res
 
 def build_all_hyper_cubes_cumulated(in_df,in_symbol,in_threshold,in_cfg) :
@@ -159,12 +159,15 @@ def build_all_hyper_cubes_cumulated(in_df,in_symbol,in_threshold,in_cfg) :
     for i in range(diff.years):
         startTime = dtStart +  relativedelta(years=i)
         filtered_df = filter_on_entry_datetimes_cumulative(in_df,startTime,startTime+ relativedelta(years=1))
-        res.append((in_symbol,(dtStart + relativedelta(years=i)).year ,build_hyper_cube(filtered_df,startTime,startTime+ relativedelta(years=1),in_symbol,in_threshold,in_cfg,isCumulative=True)))
-    return res
+        res.append(((dtStart + relativedelta(years=i)).strftime("%m/%d/%Y"), in_symbol,build_hyper_cube(filtered_df, startTime, startTime + relativedelta(years=1), in_symbol,in_threshold, in_cfg, isCumulative=True)))
+        return res
 
 def build_hyper_cube(in_df,dtStart,dtEnd,in_symbol,in_threshold,in_cfg,isCumulative) :
+    if (in_df.empty) :
+        return 0
+
     sBasePath = in_cfg.get('FilePth', 'sBasePath')
-    sBasePath = path.join( sBasePath,in_cfg.get('Run', 'sRunName'))
+    sBasePath = path.join( sBasePath,in_cfg.get('Run', 'sRunNameHysteresis'))
     sFrequency = in_cfg.get('Inputs', 'Frequency')
     sCalibrationBasePath = in_cfg.get('FilePth', 'sFixedHysteresisPath')
     sYear = str(dtStart.year)
@@ -172,8 +175,11 @@ def build_hyper_cube(in_df,dtStart,dtEnd,in_symbol,in_threshold,in_cfg,isCumulat
     sFileName= sFrequency + "_" + in_symbol + '_'  + in_cfg.get('FilePth', 'sFixedCalibrationFileName')
     if isCumulative :
         sFileName = 'Cumulated_' + sFileName
-    sFilePath =  path.join(sBasePath,sFrequency,sCalibrationBasePath,sYear,sFileName)
 
+    sFolderPath = path.join(sBasePath,sFrequency,sCalibrationBasePath,sYear)
+    sFilePath =  path.join(sFolderPath,sFileName)
+    if not os.path.exists(sFolderPath):
+        os.makedirs(sFolderPath)
 
     in_df = filterBySymbol(in_df, in_symbol, in_cfg)
 

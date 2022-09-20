@@ -13,6 +13,7 @@ sBasePath = config.get('FilePth', 'sBasePath')
 sFrequency = config.get('Inputs', 'Frequency')
 sFilePath = config.get('Inputs', 'sFileName')
 sRunName =  config.get('Run', 'sRunName')
+threshold = config.get('FixedHysteresisInput','threshold')
 sFilePath = path.join(sBasePath,sRunName,sFrequency,sFilePath)
 
 
@@ -27,7 +28,7 @@ df_positions['duration']  =  df_positions['TimeOut']-df_positions['TimeIn']
 df_positions['duration'] = df_positions.apply(lambda row: tot_hours(row['duration']), axis=1)
 
 
-res = [build_all_hyper_cubes(df_positions,item,0.6,config) for item in symbolList]
+res = [build_all_hyper_cubes(df_positions,item,threshold,config) for item in symbolList]
 res_cumulated = [build_all_hyper_cubes_cumulated(df_positions,item,0.6,config) for item in symbolList]
 
 res = [item for sublist in res for item in sublist]

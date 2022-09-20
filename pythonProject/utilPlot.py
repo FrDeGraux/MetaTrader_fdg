@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from utilConfig import build_working_path
+from utilConfig import build_working_hysteresis_path
 from os import path
 def plot_histo_fixed_hysteresis(in_item_list,in_cfg,isCumulative) :
         sFrequency =  in_cfg.get('Inputs', 'Frequency')
@@ -11,7 +11,7 @@ def plot_histo_fixed_hysteresis(in_item_list,in_cfg,isCumulative) :
             sFileName = sFrequency + '_cumulative' + sFileName + '.png'
         else :
             sFileName = sFrequency + '_' + sFileName + '.png'
-        sFileName = path.join(build_working_path(in_cfg),sFileName)
+        sFileName = path.join(build_working_hysteresis_path(in_cfg),sFileName)
 
 
 
@@ -26,7 +26,7 @@ def plot_histo_fixed_hysteresis(in_item_list,in_cfg,isCumulative) :
             sFileNameCSV = sFrequency + '_' + sFileNameCSV + '.csv'
 
 
-        sFileNameCSV = path.join(build_working_path(in_cfg),sFileNameCSV)
+        sFileNameCSV = path.join(build_working_hysteresis_path(in_cfg),sFileNameCSV)
         sTitle = ""
 
         df = pd.DataFrame(in_item_list, columns=['Symbol', 'Year', 'Fixed_spread'])

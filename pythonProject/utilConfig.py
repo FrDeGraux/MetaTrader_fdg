@@ -1,4 +1,4 @@
-from os import path
+import os
 def init_config() :
     from configparser import ConfigParser
     # instantiate
@@ -6,13 +6,16 @@ def init_config() :
     # parse existing file
     config.read('config.ini')
     return config
-def build_working_path(config) :
-    sRunName = config.get('Run', 'sRunName')
+def build_working_hysteresis_path(config) :
+    sRunName = config.get('Run', 'sRunNameHysteresis')
     sBasePath = config.get('FilePth', 'sBasePath')
     sBasePath = sBasePath.replace("\\\\", "\\")
 
-    sBasePath = path.join(sBasePath, sRunName)
-    sBasePathFreq = path.join(sBasePath, config.get('Inputs', 'Frequency'))
+    sBasePath = os.path.join(sBasePath, sRunName)
+    sBasePathFreq = os.path.join(sBasePath, config.get('Inputs', 'Frequency'))
     sFixedHysteresisPath =  config.get('FilePth', 'sFixedHysteresisPath')
-    sPath = path.join(sBasePathFreq,sFixedHysteresisPath)
+    sPath = os.path.join(sBasePathFreq,sFixedHysteresisPath)
+
+    if not os.path.exists(sPath):
+        os.makedirs(sPath)
     return sPath
