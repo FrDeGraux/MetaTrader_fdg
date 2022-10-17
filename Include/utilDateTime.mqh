@@ -15,11 +15,19 @@ public :
    static datetime   timeFrameToDateTime(ENUM_TIMEFRAMES in_tf);
    static datetime   roundToDay(datetime in_dt);
    static datetime   computeUltimateDate(datetime in_dt,ENUM_TIMEFRAMES in_tf);
+   static int        getYear(datetime in);
 
   };
 //+------------------------------------------------------------------+
 //|                                                               |
 //+------------------------------------------------------------------+
+int utilDateTime::getYear(datetime in)
+{
+  MqlDateTime str1;
+   TimeToStruct(in,str1);
+   return str1.year;
+   
+}
 long utilDateTime::computeHourAdjustment(ENUM_TIMEFRAMES in_tf)
   {
    long res;
@@ -31,7 +39,7 @@ long utilDateTime::computeHourAdjustment(ENUM_TIMEFRAMES in_tf)
    return res;
   }
 //+------------------------------------------------------------------+
-//|    Compute the ultimate day of trade from a final datetime                                                              |
+//|    Compute the ultimate day of trade from a final datetime (used for swap)                                                            |
 //+------------------------------------------------------------------+
 datetime utilDateTime::computeUltimateDate(datetime dt_final_date_input,ENUM_TIMEFRAMES in_tf)
   {

@@ -11,13 +11,23 @@ class UtilTerminal
    public : 
       static bool isViewerMode();
       static bool isViewerModeAlt();
+      static bool isTesterMode();
       static bool useCiCustomMA_Yellow_Hysteresis();
       static bool displayEquity();
       static bool displaySwap();
       static bool displayATRSLTP();
+      static bool displayFixedHysteresis();
       static bool printTicks();
+      
 };
-
+bool UtilTerminal::isTesterMode()
+{
+return(MQLInfoInteger(MQL_TESTER) || MQLInfoInteger(MQL_VISUAL_MODE));
+}
+bool UtilTerminal::displayFixedHysteresis()
+{
+return MQLInfoInteger(MQL_VISUAL_MODE);
+}
 bool UtilTerminal::printTicks()
 {
    return false;
@@ -26,6 +36,7 @@ bool UtilTerminal::displaySwap()
 {
 if(!isViewerMode())
    return false;
+return true;
 if(Period() == PERIOD_D1)
    return true;
  return false;

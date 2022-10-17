@@ -131,11 +131,7 @@ double CSymbolInfoCustom::computeNetPositioning()
 
          msg = msg_base + " ( " + m_position_info.Symbol() + " ) " + " : new Positioning is : " + DoubleToString(new_positioning);
         }
-      //--- Show a trade in the balance with this symbol. Consider swap and commission
 
-      //--- Otherwise, write the previous value
-
-      //  Print(msg);
      }
    return new_positioning;
 
@@ -239,31 +235,11 @@ double CSymbolInfoCustom::computeSymbolBalance()
            {
            
            nDeals=nDeals + 1;
-           /*
-           if(Name() == "GBPUSD")
-           {
-           Print(" i has the value " + DoubleToString(i));
-           Print("PRofit is " + DoubleToString(m_deal_info.Profit()));
-           Print("Swap is " + DoubleToString(m_deal_info.Swap()));
-           Print("Commission is " + DoubleToString(m_deal_info.Commission()));
-           }
-           */
+
              new_balance = previous_balance +m_deal_info.Profit()+m_deal_info.Swap()+m_deal_info.Commission();
             previous_balance = new_balance;
             nProcessedDeals = i+1;
-            /*
-                    if(Name() == "GBPUSD")
-           {
-            Print(" Previous balance is " + DoubleToString(previous_balance));
-            
-            Print(" new_balance balance is " + DoubleToString(new_balance));
-            
-            Print(" nDeals  is " + DoubleToString(nDeals));
-              Print(" processed_deals_already  is " + DoubleToString(processed_deals_already));
-                Print(" deals_total  is " + DoubleToString(deals_total));
-                
-            }
-            */
+
            }
         }
 

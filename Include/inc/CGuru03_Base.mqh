@@ -297,9 +297,11 @@ bool CGuruEx03_Base::CheckEntry(bool buy_signal,bool sell_signal)
     string sBalanceVarName = m_Symbol.Name() + "_balance";
     string sEquityVarName = m_Symbol.Name() + "_equity";
     string sPositioningVarName = m_Symbol.Name() + "_netPositioning";
-  
+   
     GlobalVariableSet(sEquityVarName,equity);
      GlobalVariableSet(sPositioningVarName,positioning);
+
+
 
   // m_Indis.Refresh();
  

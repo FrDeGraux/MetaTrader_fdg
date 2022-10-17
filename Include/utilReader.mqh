@@ -6,8 +6,13 @@
 #property copyright "Copyright 2021, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
 #include <Arrays\ArrayString.mqh>
+#include "utilDateTime.mqh"
 #define NROWS_SWAP 5217
 #define NCOLS_SWAP  4
+
+#define NROWS_FIXED_HYSTERESIS 81
+#define NCOLS_FIXED_HYSTERESIS 3
+
 class UtilReader
   {
 private : 
@@ -16,9 +21,13 @@ private :
 public :
    static bool       read_swap_file(CArrayString &objects[]);
    static void       filter_swap_array(CArrayString &objects_in[],CArrayString &objects_out[],string in_symbol);
+   static void       filter_array_on_column_value(CArrayString &objects_in[],CArrayString &objects_out[],int col_to_filter,string in_value_to_look_after);
    static int        getSizeBeforeNULL(CArrayString &objects_in[]);
    static bool       checkIfRange(CArrayString &objects_in[],datetime in_dt);
+      static bool       checkIfRange_Year(CArrayString &objects_in[],datetime in_dt);
    static double     getSwapValue(CArrayString &objects_in[],datetime dt_in,bool isSwapLong);
+      static double     getFixedHysteresisValue_InPoints(CArrayString &objects_in[],datetime dt_in);
+   static bool read_fixed_hysteresis_file(CArrayString &res[],string sFilePath);
   };
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -34,6 +43,34 @@ if(in_dt > end_dt)
    return false;
 return true;
 }
+bool UtilReader::checkIfRange_Year(CArrayString &objects_in[],datetime in_dt)
+{
+int start_year = utilDateTime::getYear(StringToTime(objects_in[0].At(0)));
+int end_year = utilDateTime::getYear(StringToTime(objects_in[ArraySize(objects_in)-1].At(0)));
+int current_year = utilDateTime::getYear(in_dt);
+if(current_year < start_year)
+   return false;
+if(current_year > end_year)
+   return false;
+return true;
+}
+
+double UtilReader::getFixedHysteresisValue_InPoints(CArrayString &objects_in[],datetime dt_in)
+{
+if(!UtilReader::checkIfRange_Year(objects_in, dt_in))
+   Alert(" UtilReader::getFixedHysteresisValue " + objects_in[0].At(1) + " Datetime is not in range");
+int index_col = 2;
+int raw_next = getRawLastDateTime(objects_in,dt_in);
+if (raw_next == 0)
+   return objects_in[0].At(index_col);
+ if (raw_next == ArraySize(objects_in))
+   return objects_in[raw_next-1].At(index_col);
+   
+ return objects_in[raw_next-1].At(index_col);
+}
+
+
+
 double UtilReader::getSwapValue(CArrayString &objects_in[],datetime dt_in,bool isSwapLong)
 {
 if(!UtilReader::checkIfRange(objects_in, dt_in))
@@ -82,14 +119,14 @@ int UtilReader::getRawLastDateTime(CArrayString &objects_in[],datetime dt_in)
    }
  return ArraySize(objects_in);
 }
-void UtilReader::filter_swap_array(CArrayString &objects_in[],CArrayString &objects_out[],string in_symbol)
-  {
-  int count = 0;
+void UtilReader::filter_array_on_column_value(CArrayString &objects_in[],CArrayString &objects_out[],int col_to_filter,string in_value_to_look_after)
+{
+int count = 0;
   ArrayResize(objects_out,ArraySize(objects_in));
    for(int i=0 ; i < ArraySize(objects_in) ; i++)
      {
      CArrayString r = objects_in[i];
-         if(objects_in[i].At(1) == in_symbol)
+         if(objects_in[i].At(col_to_filter) == in_value_to_look_after)
          {
           objects_out[count] = r;
           count++;
@@ -98,7 +135,40 @@ void UtilReader::filter_swap_array(CArrayString &objects_in[],CArrayString &obje
      }
      int j=1;
      return;
+}
+void UtilReader::filter_swap_array(CArrayString &objects_in[],CArrayString &objects_out[],string in_symbol)
+  {
+UtilReader::filter_array_on_column_value(objects_in,objects_out, 1, in_symbol);
   }
+bool UtilReader::read_fixed_hysteresis_file(CArrayString &res[],string sFilePath)
+{
+  string data[NROWS_FIXED_HYSTERESIS][NCOLS_FIXED_HYSTERESIS];
+   string separator = ";";
+   int m_handle=-1;
+   ArrayResize(res,NROWS_FIXED_HYSTERESIS);
+   string m_filename=sFilePath;
+   m_handle=FileOpen(m_filename,FILE_CSV | FILE_READ| FILE_ANSI|FILE_COMMON,separator);
+   if(m_handle<0)
+   {
+    Print("UtilReader" + " unable to read file : " + sFilePath);
+       return false;
+   }
+
+
+
+   for(int i = 0; i<NROWS_FIXED_HYSTERESIS; i++)
+     {
+      CArrayString toInsert;
+
+      for(int j=0 ; j < NCOLS_FIXED_HYSTERESIS ; j++)
+         toInsert.Add(FileReadString(m_handle,15));
+      toInsert.Resize(NCOLS_FIXED_HYSTERESIS);
+      res[i] = toInsert;   
+     }
+
+   FileClose(m_handle);
+   return true;
+}
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
