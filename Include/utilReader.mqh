@@ -45,8 +45,8 @@ return true;
 }
 bool UtilReader::checkIfRange_Year(CArrayString &objects_in[],datetime in_dt)
 {
-int start_year = utilDateTime::getYear(StringToTime(objects_in[0].At(0)));
-int end_year = utilDateTime::getYear(StringToTime(objects_in[ArraySize(objects_in)-1].At(0)));
+int start_year = utilDateTime::getYear(StringToTime(objects_in[1].At(0)));
+int end_year = utilDateTime::getYear(StringToTime(objects_in[ArraySize(objects_in)-1].At(0)))+1;
 int current_year = utilDateTime::getYear(in_dt);
 if(current_year < start_year)
    return false;
@@ -62,11 +62,11 @@ if(!UtilReader::checkIfRange_Year(objects_in, dt_in))
 int index_col = 2;
 int raw_next = getRawLastDateTime(objects_in,dt_in);
 if (raw_next == 0)
-   return objects_in[0].At(index_col);
+   return objects_in[1].At(index_col);
  if (raw_next == ArraySize(objects_in))
-   return objects_in[raw_next-1].At(index_col);
+   return objects_in[raw_next-2].At(index_col);
    
- return objects_in[raw_next-1].At(index_col);
+ return objects_in[raw_next-2].At(index_col);
 }
 
 

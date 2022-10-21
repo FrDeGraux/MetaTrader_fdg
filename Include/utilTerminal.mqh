@@ -43,6 +43,7 @@ if(Period() == PERIOD_D1)
 }
 bool UtilTerminal::displayATRSLTP()
 {
+return false;
 return(isViewerMode());
 }
 bool UtilTerminal::useCiCustomMA_Yellow_Hysteresis()
