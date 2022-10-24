@@ -19,14 +19,23 @@ sBasePathFreq = path.join(sBasePath,config.get('Inputs', 'Frequency'))
 
 sReportsPath = path.join(sBasePathFreq,config.get('FilePth', 'sReportsPath'))
 sDurationReturnPath = path.join(sReportsPath,config.get('FilePth', 'sDurationPath'))
-sFileName = config.get('Inputs', 'sFileName')
 # Press Shift+F10 to FilePth it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import pandas as pd
 import numpy as np
 
+frequencies = {'H1': config.get('AllInputs', 'Frequencies_1'), 'H4': config.get('AllInputs', 'Frequencies_2'),
+               'D1': config.get('AllInputs', 'Frequencies_3'), 'W1': config.get('AllInputs', 'Frequencies_4')}
+Frequencies = [value for key,value in frequencies.items()]
 
-
+sFileName_SMA = {'H1': config.get('AllInputs', 'sFileName_H1_SMA'),
+                 'H4': config.get('AllInputs', 'sFileName_H4_SMA'),
+                 'D1': config.get('AllInputs', 'sFileName_D1_SMA'),
+                 'W1': config.get('AllInputs', 'sFileName_W1_SMA')}
+sFileName_EMA = {'H1': config.get('AllInputs', 'sFileName_H1_EMA'),
+                 'H4': config.get('AllInputs', 'sFileName_H4_EMA'),
+                 'D1': config.get('AllInputs', 'sFileName_D1_EMA'),
+                 'W1': config.get('AllInputs', 'sFileName_W1_EMA')}
 
 
 balance_initial = 10000
@@ -45,31 +54,15 @@ balance_initial = 10000
 # Plot(return,régime)    # Use a breakpoint in the code line below to debug your script.
 # Plot BySymbol    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
-def run(in_config) :
-    Frequencies_1 = in_config.get('AllInputs', 'Frequencies_1')
-    Frequencies_2 = in_config.get('AllInputs', 'Frequencies_2')
-    Frequencies_3 = in_config.get('AllInputs', 'Frequencies_3')
-    Frequencies_4 = in_config.get('AllInputs', 'Frequencies_4')
-    Frequencies = [Frequencies_1, Frequencies_2, Frequencies_3, Frequencies_4]
+def run_all_timeframes(in_config) :
 
+    sFile_SMA = [item.values() for item in sFileName_SMA]
+    sFile_EMA = [item.values() for item in sFileName_EMA]
 
-    sFileName_H1_one = in_config.get('AllInputs', 'sFileName_H1_SMA')
-    sFileName_H4_one = in_config.get('AllInputs', 'sFileName_H4_SMA')
-    sFileName_D1_one =  in_config.get('AllInputs', 'sFileName_D1_SMA')
-    sFileName_W1_one = in_config.get('AllInputs', 'sFileName_W1_SMA')
-
-
-    sFileName_H1_two = in_config.get('AllInputs', 'sFileName_H1_EMA')
-    sFileName_H4_two = in_config.get('AllInputs', 'sFileName_H4_EMA')
-    sFileName_D1_two = in_config.get('AllInputs', 'sFileName_D1_EMA')
-    sFileName_W1_two = in_config.get('AllInputs', 'sFileName_W1_EMA')
-
-    sFileOne = [sFileName_H1_one,sFileName_H4_one,sFileName_D1_one,sFileName_W1_one]
-    sFileTwo = [sFileName_H1_two,sFileName_H4_two,sFileName_D1_two,sFileName_W1_two]
 
     sListRunNames = [config.get('Run', 'sRunName_SMA'),config.get('Run', 'sRunName_EMA')]
     list_Styles = [config.get('Styles', 'Style_SMA_Returns'),config.get('Styles', 'Style_EMA_Returns')]
-    plot_profits_many_runs(Frequencies,sListRunNames,sFileOne,sFileTwo,list_Styles,in_config)
+    plot_profits_many_runs(Frequencies,sListRunNames,sFile_SMA,sFile_EMA,list_Styles,in_config)
 
 def plot_profits_many_runs(in_frequencies,in_listRunNames,in_sFileName_One,in_sFileName_Two,in_Styles,in_config) :
     sListBasePath = [path.join(sMotherPath,item) for item in in_listRunNames]
@@ -118,13 +111,13 @@ def plot_profits_all_symbols(in_df_positions,sSymbolList,in_config) :       # pl
     for symbol in sSymbolList :
         in_df_positions_filtered = filterBySymbol(in_df_positions,symbol,in_config)
 
-        in_df_positions_filtered = in_df_positions_filtered[['Profit','Swap_Real','Commission']]
+        in_df_positions_filtered = in_df_positions_filtered[['Profit','Swap_corrected','Commission']]
         profits = in_df_positions_filtered.resample(in_timeframe).sum()
         profits_cumulated = profits.cumsum()
         profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
 
         plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values, label=symbol)
-        plt.title(in_config.get('Returns', 'Graph_Title') + in_timeframe + "_" +symbol)
+        plt.title(in_config.get('Run', 'sRunName')  + '_' + in_config.get('Returns', 'Graph_Title') + in_timeframe + "_" +symbol)
         plt.legend(loc="best")
         if symbol == 'ALL' :
             plt.savefig(path.join(sReportsPath, sRunName + '_Profits' + symbol) + '.png')
@@ -233,8 +226,10 @@ def plot_return_correlation_ByPair(in_df_positions,symbol_one,symbol_two,in_coun
     df_to_process = [filterBySymbol(in_df_positions,item,config) for item in [symbol_two,symbol_one]]
     df_processed = []
     for item in df_to_process :
-
-        item = item['Profit'] + item['Commission'] + item['Swap_Real']
+        try :
+            item = item['Profit'] + item['Commission'] + item['Swap_corrected']
+        except :
+            pass
         item = pd.DataFrame(item.resample('W').sum())
         item['Balance'] = item.cumsum()
         item['Balance'] = item['Balance'].shift(periods=1)
@@ -282,39 +277,28 @@ def plot_return_correlation_All(symbolList) :
     plt.suptitle( config.get('Correlations', 'SupTilteName') + " (" + config.get('Run', 'sRunName') + ")" + " (" + config.get('Inputs', 'Frequency') + ")",fontsize= int(config.get('Correlations', 'Correlations_SupTitleSize')))
     plt.show()
     plt.savefig(path.join(sReportsPath,sRunName +'_Correlations.png'))
+
+
 if __name__ == '__main__':
-    run(config)
+    run_all_timeframes(config)
 
     string_val = config.get('Names', 'Entry_Out')
-    print(string_val)
-
-    df_positions = read_positions(path.join(sBasePathFreq,sFileName))
-
-
+    df_positions = read_positions(path.join(sBasePathFreq, sFileName_SMA[config.get('Inputs','Frequency')]))
 
     symbolList= getSymbolList(df_positions)
     symbolList.append('ALL')
     plt.figure(3)
-    [plot_return_durations(df_positions, symbol, config) for symbol in symbolList]
+    #[plot_return_durations(df_positions, symbol, config) for symbol in symbolList]
 
     plt.figure(4)
-  #  plt.figure(4,dpi=300)
     plot_return_correlation_All(symbolList)
-
-
 
     df_positions[ config.get('Names', 'PositionMissedParameters')]  = (df_positions[ config.get('Names', 'PositionMissedParameters')]).astype(str) + df_positions['Symbol']
     plt.figure(1)
     plot_histogram_SL_TP(df_positions,config)
 
-
-
-
     plt.figure(2)
     plot_profits_all_symbols(df_positions,symbolList,config)
-
-
-
 
     # 2. Duration vs Profit
 

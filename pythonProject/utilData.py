@@ -11,6 +11,7 @@ def compute_loss_SL (in_df_position) :
     return df_sl
 def unpackComment_MM(in_df_positions) :
     in_df_positions[['Slow_MM', 'Fast_MM', 'Hysteresis','SwapReal']] = in_df_positions['Comment()'].str.split('_', expand=True)
+    in_df_positions.drop(columns = ['SwapReal'])
     return in_df_positions
    # in_df_positions = in_df_positions.replace(to_replace='None', value=np.nan)
 

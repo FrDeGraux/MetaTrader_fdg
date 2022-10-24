@@ -4,32 +4,47 @@ import numpy as np
 import pandas as pd
 from utilConfig import build_working_hysteresis_path
 from os import path
-def plot_histo_fixed_hysteresis(in_item_list,in_cfg,isCumulative) :
+from defined_enums import OptionPlotHysteresis
+def plot_histo_fixed_hysteresis(in_item_list,in_cfg,in_plot_enum) :
         sFrequency =  in_cfg.get('Inputs', 'Frequency')
         sFileName = in_cfg.get('FilePth', 'sFileNameFixedHysteresisSummary')
-        if isCumulative :
+        if in_plot_enum == OptionPlotHysteresis.CUMULATIVE :
             sFileName = sFrequency + '_cumulative' + sFileName + '.png'
+            sTitle = sFrequency + "_cumulative_Fixed_spread"
         else :
-            sFileName = sFrequency + '_' + sFileName + '.png'
+            if in_plot_enum == OptionPlotHysteresis.STANDARD:
+                sFileName = sFrequency + '_' + sFileName + '.png'
+                sTitle = sFrequency + "_Fixed_spread"
+            else :
+                if in_plot_enum == OptionPlotHysteresis.COMPARATIVE :
+                    sFileName = sFrequency + '_' + sFileName + '.png'
+                    sTitle = sFrequency + "_Comparisons_Fixed_spread"
+                else :
+                    raise Exception
+
+
+
+
         sFileName = path.join(build_working_hysteresis_path(in_cfg),sFileName)
 
 
-
-        sFileNameCSV = in_cfg.get('FilePth', 'sFileNameFixedHysteresisMQLInput')
-
-
-        if isCumulative :
-            sTitle = sFrequency + "_cumulative_Fixed_spread"
-            sFileNameCSV = sFrequency + '_cumulative' + sFileNameCSV + '.csv'
-        else :
-            sTitle = sFrequency + "_Fixed_spread"
-            sFileNameCSV = sFrequency + '_' + sFileNameCSV + '.csv'
-
-
-        sFileNameCSV = path.join(build_working_hysteresis_path(in_cfg),sFileNameCSV)
-
         df = pd.DataFrame(in_item_list, columns=['Symbol', 'Year', 'Fixed_spread'])
-        df.to_csv(sFileNameCSV,sep=';',index = False)
+
+
+        if in_plot_enum != OptionPlotHysteresis.COMPARATIVE :
+            sFileNameCSV = in_cfg.get('FilePth', 'sFileNameFixedHysteresisMQLInput')
+
+            sFileNameCSV = path.join(build_working_hysteresis_path(in_cfg), sFileNameCSV)
+
+            if in_plot_enum == OptionPlotHysteresis.CUMULATIVE :
+                sFileNameCSV = sFileNameCSV + "_" + sFrequency + '_cumulative'  + '.csv'
+            else :
+                if in_plot_enum == OptionPlotHysteresis.STANDARD :
+                    sFileNameCSV = sFileNameCSV + "_" + sFrequency + '.csv'
+            df.to_csv(sFileNameCSV, sep=';', index=False)
+
+
+
 
         df = df.pivot("Symbol", "Year", "Fixed_spread")
         df.plot(kind='bar')

@@ -3,6 +3,7 @@ from utilReader import read_positions
 from utilPlot import plot_histo_fixed_hysteresis
 from utilData import from_in_to_out_mapping,unpackComment_MM,getSymbolList
 from utilConfig import init_config
+from defined_enums import OptionPlotHysteresis
 from os import path
 from utilCalibrationFixedHysteresis import build_all_hyper_cubes,scatter_data,tot_hours,build_all_hyper_cubes_cumulated
 import warnings
@@ -28,11 +29,16 @@ df_positions['duration'] = df_positions.apply(lambda row: tot_hours(row['duratio
 
 
 res = [build_all_hyper_cubes(df_positions,item,threshold,config) for item in symbolList]
-res_cumulated = [build_all_hyper_cubes_cumulated(df_positions,item,0.6,config) for item in symbolList]
+res_cumulated = [build_all_hyper_cubes_cumulated(df_positions,item,threshold,config) for item in symbolList]
 
 res = [item for sublist in res for item in sublist]
 res_cumulated = [item for sublist in res_cumulated for item in sublist]
-plot_histo_fixed_hysteresis(res,config,isCumulative=False)
-plot_histo_fixed_hysteresis(res_cumulated,config,isCumulative = True)
+
+res_compared = [(x,y,z1-z2) for ((x,y,z1),(t,s,z2)) in zip(res,res_cumulated)]
+plot_histo_fixed_hysteresis(res,config,OptionPlotHysteresis.STANDARD)
+plot_histo_fixed_hysteresis(res_cumulated,config,OptionPlotHysteresis.COMPARATIVE)
+plot_histo_fixed_hysteresis(res_compared,config,OptionPlotHysteresis.CUMULATIVE)
+
+
 pass
 

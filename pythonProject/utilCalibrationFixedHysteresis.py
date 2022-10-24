@@ -151,6 +151,9 @@ def build_all_hyper_cubes(in_df,in_symbol,in_threshold,in_cfg) :
         startTime = dtStart +  relativedelta(years=i)
         filtered_df = filter_on_entry_datetimes(in_df,startTime,startTime+ relativedelta(years=1))
         res.append(((dtStart + relativedelta(years=i)).strftime("%m/%d/%Y") ,in_symbol,build_hyper_cube(filtered_df,startTime,startTime+ relativedelta(years=1),in_symbol,in_threshold,in_cfg,isCumulative = False)))
+
+    res.append(((dtStart-relativedelta(years=1)).strftime("%m/%d/%Y") ,in_symbol,build_hyper_cube(filtered_df,startTime,startTime+ relativedelta(years=0),in_symbol,in_threshold,in_cfg,isCumulative = False)))
+
     return res
 
 def build_all_hyper_cubes_cumulated(in_df,in_symbol,in_threshold,in_cfg) :
@@ -166,11 +169,14 @@ def build_all_hyper_cubes_cumulated(in_df,in_symbol,in_threshold,in_cfg) :
     diff = relativedelta(dtEnd, dtStart)
     res = []
     for i in range(diff.years):
-        startTime = dtStart +  relativedelta(years=i+1)
-        filtered_df = filter_on_entry_datetimes_cumulative(in_df,startTime,startTime+ relativedelta(years=i+1))
+
+        filtered_df = filter_on_entry_datetimes_cumulative(in_df,dtStart,dtStart+ relativedelta(years=i+1))
 
         # from start to year
-        res.append(((dtStart + relativedelta(years=i+1)).strftime("%m/%d/%Y"), in_symbol,build_hyper_cube(filtered_df, startTime, startTime + relativedelta(years=i), in_symbol,in_threshold, in_cfg, isCumulative=True)))
+        res.append(((dtStart + relativedelta(years=i)).strftime("%m/%d/%Y"), in_symbol,build_hyper_cube(filtered_df, dtStart, dtStart + relativedelta(years=i+1), in_symbol,in_threshold, in_cfg, isCumulative=True)))
+
+    res.append(((dtStart - relativedelta(years=1)).strftime("%m/%d/%Y"), in_symbol,build_hyper_cube(filtered_df, dtStart, dtStart + relativedelta(years=0), in_symbol,in_threshold, in_cfg, isCumulative=True)))
+
     return res
 
 def build_hyper_cube(in_df,dtStart,dtEnd,in_symbol,in_threshold,in_cfg,isCumulative) :
@@ -183,7 +189,7 @@ def build_hyper_cube(in_df,dtStart,dtEnd,in_symbol,in_threshold,in_cfg,isCumulat
     sCalibrationBasePath = in_cfg.get('FilePth', 'sFixedHysteresisPath')
     sYear = str(dtStart.year)
 
-    sFileName= sFrequency + "_" + in_symbol + '_'  + in_cfg.get('FilePth', 'sFixedCalibrationFileName')
+    sFileName= sFrequency + "_" + in_symbol + '_'  + in_cfg.get('FilePth', 'sFixedCalibrationFileName') + '.png'
     if isCumulative :
         sFileName = 'Cumulated_' + sFileName
 
