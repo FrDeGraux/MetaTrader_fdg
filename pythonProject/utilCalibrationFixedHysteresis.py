@@ -152,7 +152,7 @@ def build_all_hyper_cubes(in_df,in_symbol,in_threshold,in_cfg) :
         filtered_df = filter_on_entry_datetimes(in_df,startTime,startTime+ relativedelta(years=1))
         res.append(((dtStart + relativedelta(years=i)).strftime("%m/%d/%Y") ,in_symbol,build_hyper_cube(filtered_df,startTime,startTime+ relativedelta(years=1),in_symbol,in_threshold,in_cfg,isCumulative = False)))
 
-    res.append(((dtStart-relativedelta(years=1)).strftime("%m/%d/%Y") ,in_symbol,build_hyper_cube(filtered_df,startTime,startTime+ relativedelta(years=0),in_symbol,in_threshold,in_cfg,isCumulative = False)))
+    res.insert(0,(((dtStart-relativedelta(years=1)).strftime("%m/%d/%Y") ,in_symbol,build_hyper_cube(filter_on_entry_datetimes(in_df,dtStart,dtStart+ relativedelta(years=1)),dtStart,dtStart+ relativedelta(years=1),in_symbol,in_threshold,in_cfg,isCumulative = False))))
 
     return res
 
@@ -175,14 +175,14 @@ def build_all_hyper_cubes_cumulated(in_df,in_symbol,in_threshold,in_cfg) :
         # from start to year
         res.append(((dtStart + relativedelta(years=i)).strftime("%m/%d/%Y"), in_symbol,build_hyper_cube(filtered_df, dtStart, dtStart + relativedelta(years=i+1), in_symbol,in_threshold, in_cfg, isCumulative=True)))
 
-    res.append(((dtStart - relativedelta(years=1)).strftime("%m/%d/%Y"), in_symbol,build_hyper_cube(filtered_df, dtStart, dtStart + relativedelta(years=0), in_symbol,in_threshold, in_cfg, isCumulative=True)))
+    res.insert(0,(((dtStart - relativedelta(years=1)).strftime("%m/%d/%Y"), in_symbol,build_hyper_cube(filter_on_entry_datetimes_cumulative(in_df,dtStart,dtStart+ relativedelta(years =1)), dtStart, dtStart + relativedelta(years=1), in_symbol,in_threshold, in_cfg, isCumulative=True))))
 
     return res
 
 def build_hyper_cube(in_df,dtStart,dtEnd,in_symbol,in_threshold,in_cfg,isCumulative) :
     if (in_df.empty) :
         return 0
-
+    threshold = in_cfg.get("FixedHysteresisInput","threshold")
     sBasePath = in_cfg.get('FilePth', 'sBasePath')
     sBasePath = path.join( sBasePath,in_cfg.get('Run', 'sRunNameHysteresis'))
     sFrequency = in_cfg.get('Inputs', 'Frequency')
@@ -193,7 +193,7 @@ def build_hyper_cube(in_df,dtStart,dtEnd,in_symbol,in_threshold,in_cfg,isCumulat
     if isCumulative :
         sFileName = 'Cumulated_' + sFileName
 
-    sFolderPath = path.join(sBasePath,sFrequency,sCalibrationBasePath,sYear)
+    sFolderPath = path.join(sBasePath,sFrequency,sCalibrationBasePath,str(100*float(threshold)) + "_Procent",sYear)
     sFilePath =  path.join(sFolderPath,sFileName)
     if not os.path.exists(sFolderPath):
         os.makedirs(sFolderPath)
@@ -220,9 +220,9 @@ def build_hyper_cube(in_df,dtStart,dtEnd,in_symbol,in_threshold,in_cfg,isCumulat
     df_unfiltered,fixed_hyst_res,z_min,z_max = compute_hyper_cube(in_df,in_threshold,min_hyst,max_hyst)
     sTitle = ""
     if isCumulative :
-        sTilte = in_symbol + "_Cumulative Fixed hysteresis calibration " + "(" + dtStart.strftime("%Y") + ";" + dtEnd.strftime("%Y")
+        sTilte = in_symbol + "_Cumulative Fixed hysteresis calibration " + str(100*float(threshold)) + "_Procent" + "(" + dtStart.strftime("%Y") + ";" + dtEnd.strftime("%Y")
     else :
-        sTitle = in_symbol + "_Fixed hysteresis calibration " + "( "  + dtStart.strftime("%Y") + ";" + dtEnd.strftime("%Y") + ")"
+        sTitle = in_symbol + "_Fixed hysteresis calibration " + threshold + "_Procent"  + "( "  + dtStart.strftime("%Y") + ";" + dtEnd.strftime("%Y") + ")"
     ax = scatter_data(fig,in_df, in_symbol, 0, fixed_hyst_res, 0, z_max)
     ax.set_title(sTitle)
 
