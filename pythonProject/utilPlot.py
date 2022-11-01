@@ -7,7 +7,9 @@ from os import path
 from defined_enums import OptionPlotHysteresis
 def plot_histo_fixed_hysteresis(in_item_list,in_cfg,in_plot_enum) :
         sFrequency =  in_cfg.get('Inputs', 'Frequency')
-        sFileName = in_cfg.get('FilePth', 'sFileNameFixedHysteresisSummary')
+        sFileName = in_cfg.get('FilePth', 'sFixedCalibrationFileName')
+        threshold = str(100*float(in_cfg.get('FixedHysteresisInput', 'threshold')))
+        sFileName = sFileName + '_' + threshold
         if in_plot_enum == OptionPlotHysteresis.CUMULATIVE :
             sFileName = sFrequency + '_cumulative' + sFileName + '.png'
             sTitle = sFrequency + "_cumulative_Fixed_spread"
@@ -32,15 +34,15 @@ def plot_histo_fixed_hysteresis(in_item_list,in_cfg,in_plot_enum) :
 
 
         if in_plot_enum != OptionPlotHysteresis.COMPARATIVE :
-            sFileNameCSV = in_cfg.get('FilePth', 'sFileNameFixedHysteresisMQLInput')
+            sFileNameCSV = in_cfg.get('FilePth', 'sFixedCalibrationFileName')
 
             sFileNameCSV = path.join(build_working_hysteresis_path(in_cfg), sFileNameCSV)
 
             if in_plot_enum == OptionPlotHysteresis.CUMULATIVE :
-                sFileNameCSV = sFileNameCSV + "_" + sFrequency + '_cumulative'  + '.csv'
+                sFileNameCSV = sFileNameCSV + str(100*float(threshold)) + "_Procent" + "_" + sFrequency + '_cumulative'  + '.csv'
             else :
                 if in_plot_enum == OptionPlotHysteresis.STANDARD :
-                    sFileNameCSV = sFileNameCSV + "_" + sFrequency + '.csv'
+                    sFileNameCSV = sFileNameCSV  + str(100*float(threshold)) + "_Procent" +  "_" + sFrequency + '.csv'
             df.to_csv(sFileNameCSV, sep=';', index=False)
 
 
@@ -56,7 +58,18 @@ def plot_histo_fixed_hysteresis(in_item_list,in_cfg,in_plot_enum) :
 def plot_time_graph(in_dt,in_values,in_legendValue) :
     plt.plot(in_dt,in_values,label = in_legendValue)
     pass
+def plot_scatter_durations(insName,toplot,in_titles,in_color,in_config) :
 
+    toplot = list(zip(*toplot))
+    x = [item.total_seconds() / 3600 for item in toplot[0]]
+    y = toplot[1]
+    colormap = np.array(['b','g', 'r'])
+    reasonMap = ['Normal','Stop Loss','Take Profit']
+
+    plt.scatter(x,y, c=in_color,s= int(in_config.get('Correlations', 'Correlations_Marker_Size')))
+    plt.title(in_titles[2],fontsize = 8)
+    plt.xlabel(in_titles[0])
+    plt.ylabel(in_titles[1])
 def plot_scatter(insName,toplot,in_titles,in_config) :
 
     toplot = list(zip(*toplot))

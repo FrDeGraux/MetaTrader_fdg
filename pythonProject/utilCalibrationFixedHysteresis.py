@@ -22,7 +22,7 @@ def plot_all_results(in_df,in_cfg) :
     for symbol in symbolsList :
         res = build_all_hyper_cubes(in_df,symbol,in_threshold,in_cfg)
 
-def scatter_data(in_fig,in_df,in_Symbol,min_hyst,max_hyst,z_min,z_max):
+def scatter_data(in_cfg,in_fig,in_df,in_Symbol,min_hyst,max_hyst,z_min,z_max):
 
 
 
@@ -33,10 +33,9 @@ def scatter_data(in_fig,in_df,in_Symbol,min_hyst,max_hyst,z_min,z_max):
     cbar = plt.colorbar(pnt3d)
     cbar.set_label("Trade duration")
 
-    config = init_config()
 
-    short_MA = config.get('ParametersMA', 'Short_MA')
-    Long_MA = config.get('ParametersMA', 'Long_MA')
+    short_MA = in_cfg.get('ParametersMA', 'Short_MA')
+    Long_MA = in_cfg.get('ParametersMA', 'Long_MA')
 
 
     ax.set_xlabel('Hysteresis_in : MA ' + Long_MA + " - MA " + short_MA)
@@ -223,7 +222,7 @@ def build_hyper_cube(in_df,dtStart,dtEnd,in_symbol,in_threshold,in_cfg,isCumulat
         sTilte = in_symbol + "_Cumulative Fixed hysteresis calibration " + str(100*float(threshold)) + "_Procent" + "(" + dtStart.strftime("%Y") + ";" + dtEnd.strftime("%Y")
     else :
         sTitle = in_symbol + "_Fixed hysteresis calibration " + threshold + "_Procent"  + "( "  + dtStart.strftime("%Y") + ";" + dtEnd.strftime("%Y") + ")"
-    ax = scatter_data(fig,in_df, in_symbol, 0, fixed_hyst_res, 0, z_max)
+    ax = scatter_data(in_cfg,fig,in_df, in_symbol, 0, fixed_hyst_res, 0, z_max)
     ax.set_title(sTitle)
 
     print(" Figure saved @ " + sFilePath)

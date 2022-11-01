@@ -9,13 +9,13 @@ from utilCalibrationFixedHysteresis import build_all_hyper_cubes,scatter_data,to
 import warnings
 warnings.filterwarnings("ignore")
 
-config = init_config()
+config = init_config('config_calibratehysteresis.ini')
 sBasePath = config.get('FilePth', 'sBasePath')
 sFrequency = config.get('Inputs', 'Frequency')
 dict_FilePath = {'H1' : config.get('Inputs', 'sFileName_H1'),'H4' : config.get('Inputs', 'sFileName_H4'),'D1' : config.get('Inputs', 'sFileName_D1'),'W1' : config.get('Inputs', 'sFileName_W1')}
-sRunName =  config.get('Run', 'sRunName')
+sBasisRunName =  config.get('Run', 'sBasisRunName')
 threshold = config.get('FixedHysteresisInput','threshold')
-sFilePath = path.join(sBasePath,sRunName,sFrequency,dict_FilePath[sFrequency])
+sFilePath = path.join(sBasePath,sBasisRunName,sFrequency,dict_FilePath[sFrequency])
 
 
 df_positions = unpackComment_MM(read_positions(sFilePath))

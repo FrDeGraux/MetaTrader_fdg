@@ -1,5 +1,5 @@
 # This is a sample Python script.
-from utilPlot import plot_scatter,plot_time_graph
+from utilPlot import plot_scatter,plot_time_graph,plot_scatter_durations
 from utilMapping import from_entry_to_category
 from utilReader import read_positions
 import matplotlib.pyplot as plt
@@ -8,7 +8,9 @@ from itertools import combinations
 from math import floor
 from utilConfig import init_config
 from utilData import filterBySymbol,getSymbolList,unpackComment_MM
-config = init_config()
+from matplotlib import cm
+
+config = init_config('config.ini')
 sRunName = config.get('Run', 'sRunName_SMA')
 sMotherPath = config.get('FilePth', 'sBasePath')
 sMotherPath = sMotherPath.replace("\\\\", "\\")
@@ -30,8 +32,11 @@ Frequencies = [value for key,value in frequencies.items()]
 
 sFileName_SMA = {'H1': config.get('AllInputs', 'sFileName_H1_SMA'),
                  'H4': config.get('AllInputs', 'sFileName_H4_SMA'),
-                 'D1': config.get('AllInputs', 'sFileName_D1_SMA'),
-                 'W1': config.get('AllInputs', 'sFileName_W1_SMA')}
+                 'D1': config.get('AllInputs', 'sFileName_D1_SMA')}
+
+sFileName_SMA_noHysteresis = {'H1': config.get('Inputs_NoStaticHysteresis', 'sFileName_H1'),
+                 'H4': config.get('Inputs_NoStaticHysteresis', 'sFileName_H4'),
+                 'D1': config.get('Inputs_NoStaticHysteresis', 'sFileName_D1')}
 sFileName_EMA = {'H1': config.get('AllInputs', 'sFileName_H1_EMA'),
                  'H4': config.get('AllInputs', 'sFileName_H4_EMA'),
                  'D1': config.get('AllInputs', 'sFileName_D1_EMA'),
@@ -107,16 +112,17 @@ def plot_profit_timeframe(in_sRunName,sFilePath,in_sFreq,style,in_config) :
 #1. #Profit TimeSeriees
 def plot_profits_all_symbols(in_df_positions,sSymbolList,in_config) :       # plot_balance
     in_timeframe = in_config.get('Returns', 'TimeFrame')
+    turbo = cm.get_cmap('turbo', len(sSymbolList))
 
-    for symbol in sSymbolList :
+
+    for idx,symbol in enumerate(sSymbolList) :
         in_df_positions_filtered = filterBySymbol(in_df_positions,symbol,in_config)
 
         in_df_positions_filtered = in_df_positions_filtered[['Profit','Swap_corrected','Commission']]
         profits = in_df_positions_filtered.resample(in_timeframe).sum()
         profits_cumulated = profits.cumsum()
         profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
-
-        plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values, label=symbol)
+        plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values, label=symbol,color = turbo.colors[idx])
         plt.title(in_config.get('Run', 'sRunName')  + '_' + in_config.get('Returns', 'Graph_Title') + in_timeframe + "_" +symbol)
         plt.legend(loc="best")
         if symbol == 'ALL' :
@@ -128,7 +134,13 @@ def plot_profits_all_symbols(in_df_positions,sSymbolList,in_config) :       # pl
 
     # LEGENDE
 #2 Profit vs Time
-def plot_return_durations(in_df_positions,in_symbol,in_config) :
+def plot_returns_durations_compare(in_df_positions,in_symbol,in_config,in_dfPositionToCompareAgainst) :
+    plt.figure()
+    plot_return_durations(in_df_positions, in_symbol, in_config,'b')
+    plot_return_durations(in_dfPositionToCompareAgainst, in_symbol, in_config,'r')
+    plt.legend(["With static", "Without static"])
+    plt.savefig(path.join(sDurationReturnPath,sRunName + '_durations_vs_returns_' + "_" + in_config.get('Inputs', 'Frequency') + "_" + in_symbol + '.png'))
+def plot_return_durations(in_df_positions,in_symbol,in_config,in_color) :
 
     in_df_positions = filterBySymbol(in_df_positions,in_symbol,in_config)
 
@@ -150,11 +162,9 @@ def plot_return_durations(in_df_positions,in_symbol,in_config) :
        #  entryIn = datetime.strptime(df['Time'].values[0],'%Y.%m.%d %H:%M:%S ')
     #entryOut = datetime.strptime(row['Time'],'%Y.%m.%d %H:%M:%S ')
         toplot.append((entryOut-entryIn,(row['Profit']),(row['Reason_number'])))
-    titles = ('Hours','Euro',in_config.get('Run', 'sRunName') + "( " + in_config.get('Inputs', 'Frequency') + " ) " +  'Profit vs durations for ' + in_symbol)
+    titles = ('Hours','Euro',in_config.get('Run', 'sRunName') + "( " + in_config.get('Inputs', 'Frequency') + " ) " +  'Profit vs durations  ' + in_symbol)
     toplot = sorted(toplot,key=lambda x: x[0],reverse=True)
-    plt.figure()
-    plot_scatter(in_symbol,toplot,titles,in_config)
-    plt.savefig(path.join(sDurationReturnPath,sRunName + '_durations_vs_returns_' + "_" + in_config.get('Inputs', 'Frequency') + "_" + in_symbol + '.png'))
+    plot_scatter_durations(in_symbol,toplot,titles,in_color,in_config)
 def plot_returns_duration_bySymbol() :
     pass
 #3. # of money (TP) vs # of money (SL)
@@ -280,15 +290,15 @@ def plot_return_correlation_All(symbolList) :
 
 
 if __name__ == '__main__':
-    run_all_timeframes(config)
+    #run_all_timeframes(config)
 
     string_val = config.get('Names', 'Entry_Out')
     df_positions = read_positions(path.join(sBasePathFreq, sFileName_SMA[config.get('Inputs','Frequency')]))
-
+    df_positions_to_compare_against = read_positions(path.join(sMotherPath,config.get('Run_NoHysteresis','sRunName_SMA'),config.get('Inputs','Frequency'), sFileName_SMA_noHysteresis[config.get('Inputs','Frequency')]))
     symbolList= getSymbolList(df_positions)
     symbolList.append('ALL')
     plt.figure(3)
-    #[plot_return_durations(df_positions, symbol, config) for symbol in symbolList]
+    [plot_returns_durations_compare(df_positions, symbol, config,df_positions_to_compare_against) for symbol in symbolList]
 
     plt.figure(4)
     plot_return_correlation_All(symbolList)
