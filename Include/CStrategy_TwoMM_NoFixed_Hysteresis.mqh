@@ -36,7 +36,7 @@
 class CStrategy_TwoMM_NoFixed_Hysteresis : public  CStrategy_Base
   {
 public :
-                     CStrategy_TwoMM_NoFixed_Hysteresis(int slowPeriod,int mediumPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse);             // Constructor
+                     CStrategy_TwoMM_NoFixed_Hysteresis(enMaTypes _MA,int slowPeriod,int mediumPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse);             // Constructor
                     ~CStrategy_TwoMM_NoFixed_Hysteresis() { Deinit(); }  // Destructor
 
    void              Deinit();
@@ -62,7 +62,7 @@ protected :
    double            getHysteresis();
    enMaTypes         SlowMethod;
 
-   enMaTypes         MediumMethod;
+   enMaTypes         FastMethod;
   };
 
 //+------------------------------------------------------------------+
@@ -109,7 +109,7 @@ double CStrategy_TwoMM_NoFixed_Hysteresis::getHysteresis()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CStrategy_TwoMM_NoFixed_Hysteresis::CStrategy_TwoMM_NoFixed_Hysteresis(int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse)
+CStrategy_TwoMM_NoFixed_Hysteresis::CStrategy_TwoMM_NoFixed_Hysteresis(enMaTypes _MA,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse)
   {
   
   
@@ -129,8 +129,8 @@ CStrategy_TwoMM_NoFixed_Hysteresis::CStrategy_TwoMM_NoFixed_Hysteresis(int slowP
    SlowPeriod = slowPeriod;
    i_FastPeriod = fastPeriod;
 
-   SlowMethod = ma_sma;
-   MediumMethod = ma_sma;
+   SlowMethod = _MA;
+   FastMethod = _MA;
 
   }
   
@@ -198,7 +198,7 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::InitIndicators()
      }
 
    CMqlParams params;
-   if(!m_Fast.Create(m_Pair, 0, i_FastPeriod,0,  MODE_EMA, PRICE_CLOSE,params))
+   if(!m_Fast.Create(m_Pair, 0, i_FastPeriod,0,  (ENUM_MA_METHOD)FastMethod, PRICE_CLOSE,params))
      {
       Print("CStrategy_TwoMM_NoFixed_Hysteresis::Error initializing fast MA");
       return(false);
@@ -230,7 +230,7 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::InitIndicators()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-   if(!m_Slow.Create(m_Pair, 0, SlowPeriod,0,  MODE_EMA, PRICE_CLOSE,params))
+   if(!m_Slow.Create(m_Pair, 0, SlowPeriod,0, (ENUM_MA_METHOD) SlowMethod, PRICE_CLOSE,params))
      {
       Print("Error initializing slow MA");
       return(false);
