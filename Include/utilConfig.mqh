@@ -29,23 +29,23 @@ if(!UtilTerminal::isTesterMode())
 
 
 string cfg = getTesterConfig();
-int findPeriod = StringFind(cfg,"Period");
-int findOptimization = StringFind(cfg,"Optimization");
+int findThis = StringFind(cfg,"ToDate");
+int findEnd = StringFind(cfg,"ForwardMode");
 
-if(findPeriod < 0 || findOptimization < 0)
+if(findThis < 0 || findEnd < 0)
    return "";
-   int startExtract  = findPeriod+7;
-   int endExtract = findOptimization-1;
- string res = StringSubstr(cfg,findPeriod+7,endExtract-startExtract-1);
+   int startExtract  = findThis+2;
+   int endExtract = findEnd-1;
+ string res = StringSubstr(cfg,findThis+7,endExtract-startExtract-1);
 
-  return res;
+  return StringToTime(res);
 } 
 string UtilConfig::getTesterConfig()
 {
 string Str;
   if (MQLInfoInteger(MQL_TESTER) && MTTESTER::GetSettings(Str))
     return Str;
-   return "OOH";
+   return "";
  
 }
 string UtilConfig::getPeriodTester()

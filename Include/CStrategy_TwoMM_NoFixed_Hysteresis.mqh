@@ -11,6 +11,7 @@
 #include <Indicators\Oscilators.mqh>
 #include <Indicators\CiPosition.mqh>
 #include <Arrays\ArrayObj.mqh>
+#include <Generic\Queue.mqh> 
 
 
 #include <DealsRequester.mqh>
@@ -26,45 +27,64 @@
 #include <Indicators\CiMA_Enhanced.mqh>
 
 #include <UtilChart.mqh>
-#include <CStrategy_Base.mqh>
+#include <CStrategy_TwoMM_Base.mqh>
     
 
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-class CStrategy_TwoMM_NoFixed_Hysteresis : public  CStrategy_Base
+class CStrategy_TwoMM_NoFixed_Hysteresis : public  CStrategy_TwoMM_Base
   {
 public :
-                     CStrategy_TwoMM_NoFixed_Hysteresis(enMaTypes _MA,int slowPeriod,int mediumPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse);             // Constructor
-                    ~CStrategy_TwoMM_NoFixed_Hysteresis() { Deinit(); }  // Destructor
-
+                     CStrategy_TwoMM_NoFixed_Hysteresis(enMaTypes _MAType,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse);
    void              Deinit();
    bool              InitIndicators();
-  bool              Init(string Pair,int slippage,double lot,int magic,bool useSLTP,datetime in_end_dt,CSVDebugger* _debugger,CArrayString& swap_rates[]);
+
    bool               LookForEntry_StrategyCrossOver();
    bool               LookForEntry_StrategyCrossOver_old();
-
+   void               removeFromQueue();
+   void               addToQueue();
+   bool              Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[]);
 protected :
 
    int               HysteresisMaxBackWardUse;
-   CIndicator_Enhanced          *m_Slow;                    // Slow moving average indicator
-   CIndicator_Enhanced   *m_Fast;
-   int               SlowPeriod;
-   int               i_FastPeriod;
+
+
    int               magic;
    bool              Checked;
-   int               FastPeriod;
-   int               ATR_MAPeriod;
-   int               ATR_StopLossRange;
-   int               ATR_TPRange;
-   bool              isLong();
+   double            getHysteresis_WIP();
    double            getHysteresis();
-   enMaTypes         SlowMethod;
 
-   enMaTypes         FastMethod;
+ private : 
+  CQueue<double>* queue_MA_wedge;  
+  double MA_wedge_max;
+
   };
+void CStrategy_TwoMM_NoFixed_Hysteresis::removeFromQueue()
+{
+// called on newBar()
+   if (this.queue_MA_wedge.Count() <= HysteresisMaxBackWardUse)
+      return;
+      
+    double toRemove = this.queue_MA_wedge.Dequeue();
+    if (toRemove >= MA_wedge_max)
+    {
+    double tab[];
+    ArrayResize(tab,toRemove);
+    this.queue_MA_wedge.CopyTo(tab);
+    this.MA_wedge_max = tab[ArrayMaximum(tab)];
+    }
+}
+void CStrategy_TwoMM_NoFixed_Hysteresis::addToQueue()
+{
+double toAdd = MathAbs(m_Slow.GetData(0,1)-m_Fast.GetData(0,1));
 
+ this.queue_MA_wedge.Add(toAdd);
+ if(toAdd > this.MA_wedge_max)
+   this.MA_wedge_max = toAdd;
+ 
+}
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -72,7 +92,25 @@ protected :
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+double CStrategy_TwoMM_NoFixed_Hysteresis::getHysteresis_WIP()
+  {
+   double Slow_MA;
+   if(UtilTerminal::useCiCustomMA_Yellow_Hysteresis())
+      return(MathAbs(m_Fast.GetData(1,0)-m_Fast.GetData(0,0)));
+   else
+      Slow_MA = m_Slow.GetData(0,0);
 
+
+   double lastVal = MathAbs(m_Slow.GetData(0,0)-m_Fast.GetData(0,0));
+   if(lastVal > this.MA_wedge_max)
+      return lastVal;
+   else
+    return this.MA_wedge_max;
+ 
+
+
+//  return 10*Point();
+  }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -109,28 +147,18 @@ double CStrategy_TwoMM_NoFixed_Hysteresis::getHysteresis()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CStrategy_TwoMM_NoFixed_Hysteresis::CStrategy_TwoMM_NoFixed_Hysteresis(enMaTypes _MA,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse)
+CStrategy_TwoMM_NoFixed_Hysteresis::CStrategy_TwoMM_NoFixed_Hysteresis(enMaTypes _MAType,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse) : CStrategy_TwoMM_Base(_MAType,slowPeriod,fastPeriod,_ATR_MAPeriod,_ATR_StopLossRange,_ATR_TPRange)
   {
-  
+  MA_wedge_max = 0;
   
    HysteresisMaxBackWardUse = _HysteresisMaxBackWardUse;
+    this.queue_MA_wedge = new CQueue<double>();  
+
 // extra spread inputed
 
    if((HysteresisMaxBackWardUse < 0))
       Alert("CStrategy_TwoMM_NoFixed_Hysteresis init problem");
-   ATR_MAPeriod = _ATR_MAPeriod;
-   ATR_TPRange = _ATR_TPRange;
-   ATR_StopLossRange=_ATR_StopLossRange;
-   ATR_TPRange = _ATR_TPRange;
-   ticks = 0;
 
-   m_Slow = NULL;
-   m_Fast = NULL;
-   SlowPeriod = slowPeriod;
-   i_FastPeriod = fastPeriod;
-
-   SlowMethod = _MA;
-   FastMethod = _MA;
 
   }
   
@@ -139,13 +167,7 @@ CStrategy_TwoMM_NoFixed_Hysteresis::CStrategy_TwoMM_NoFixed_Hysteresis(enMaTypes
 //|                                                                  |
 //+------------------------------------------------------------------+
 
-bool CStrategy_TwoMM_NoFixed_Hysteresis::Init(string Pair,int slippage,double lot,int magic,bool useSLTP,datetime in_end_dt,CSVDebugger* _debugger,CArrayString& swap_rates[])
-  {
 
-   if(!CStrategy_Base::Init(magic,Pair,slippage,lot,ATR_MAPeriod,ATR_StopLossRange,ATR_TPRange,useSLTP,in_end_dt,_debugger,swap_rates))
-      Print(" CGuruEx03_ThreeMM " + " unable to initiate");
-   return(InitIndicators());
-  }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -167,15 +189,18 @@ void CStrategy_TwoMM_NoFixed_Hysteresis::Deinit()
 //|                                                                  |
 //+------------------------------------------------------------------+
 
+	bool CStrategy_TwoMM_NoFixed_Hysteresis::Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[])
+  {
+   if(!CStrategy_TwoMM_Base::Init(magic,Pair,slippage,lot,useSLTP,_debugger,swap_rates))
+      Print(" CGuruEx03_ThreeMM " + " unable to initiate");
+   return(InitIndicators());
+  }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 bool CStrategy_TwoMM_NoFixed_Hysteresis::InitIndicators()
   {
-
-
-
 // Create fast MA and add it to collection
    if(m_Fast == NULL)
      {
@@ -189,7 +214,7 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::InitIndicators()
         }
       else
         {
-         if((m_Fast = new CiMA_Enhanced(HysteresisMaxBackWardUse)) == NULL)
+         if((m_Fast = new CiMA_Enhanced(1)) == NULL)
            {
             Print("CStrategy_TwoMM_NoFixed_Hysteresis CiMA_Enhanced Error creating fast MA");
             return(false);
@@ -198,7 +223,7 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::InitIndicators()
      }
 
    CMqlParams params;
-   if(!m_Fast.Create(m_Pair, 0, i_FastPeriod,0,  (ENUM_MA_METHOD)FastMethod, PRICE_CLOSE,params))
+   if(!m_Fast.Create(m_Pair, 0, this.FastPeriod,0,   (ENUM_MA_METHOD) FastMethod, PRICE_CLOSE,params))
      {
       Print("CStrategy_TwoMM_NoFixed_Hysteresis::Error initializing fast MA");
       return(false);
@@ -218,9 +243,9 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::InitIndicators()
    if(m_Slow == NULL)
      {
       if(UtilTerminal::useCiCustomMA_Yellow_Hysteresis())
-         return true;
+         return true; // slow already included in fast
 
-      if((m_Slow = new CiMA_Enhanced(HysteresisMaxBackWardUse)) == NULL)
+      if((m_Slow = new CiMA_Enhanced(1)) == NULL)
         {
          Print("Error creating m_Slow MA");
          return(false);
@@ -230,7 +255,7 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::InitIndicators()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-   if(!m_Slow.Create(m_Pair, 0, SlowPeriod,0, (ENUM_MA_METHOD) SlowMethod, PRICE_CLOSE,params))
+   if(!m_Slow.Create(m_Pair, 0, SlowPeriod,0,   (ENUM_MA_METHOD) SlowMethod, PRICE_CLOSE,params))
      {
       Print("Error initializing slow MA");
       return(false);
@@ -257,7 +282,16 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::InitIndicators()
 //+------------------------------------------------------------------+
 bool CStrategy_TwoMM_NoFixed_Hysteresis::LookForEntry_StrategyCrossOver()
   {
-
+  if(!UtilTerminal::isViewerMode())
+  {
+   if (this.m_Symbol.hasNewBar())
+   {
+      this.removeFromQueue();
+      this.addToQueue();
+     
+    } 
+  }
+ 
    if(!m_Symbol.RefreshRates())
       return false;
    m_Indis.Refresh();

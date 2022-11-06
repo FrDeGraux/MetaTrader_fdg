@@ -11,7 +11,7 @@ from utilData import filterBySymbol,getSymbolList,unpackComment_MM
 from matplotlib import cm
 
 config = init_config('config.ini')
-sRunName = config.get('Run', 'sRunName_SMA')
+sRunName = config.get('Run', 'sRunName')
 sMotherPath = config.get('FilePth', 'sBasePath')
 sMotherPath = sMotherPath.replace("\\\\", "\\")
 
@@ -20,6 +20,7 @@ sBasePath = path.join(sMotherPath,sRunName)
 sBasePathFreq = path.join(sBasePath,config.get('Inputs', 'Frequency'))
 
 sReportsPath = path.join(sBasePathFreq,config.get('FilePth', 'sReportsPath'))
+
 sDurationReturnPath = path.join(sReportsPath,config.get('FilePth', 'sDurationPath'))
 # Press Shift+F10 to FilePth it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -41,8 +42,10 @@ sFileName_EMA = {'H1': config.get('AllInputs', 'sFileName_H1_EMA'),
                  'H4': config.get('AllInputs', 'sFileName_H4_EMA'),
                  'D1': config.get('AllInputs', 'sFileName_D1_EMA'),
                  'W1': config.get('AllInputs', 'sFileName_W1_EMA')}
-
-
+sFileNames = {'H1': config.get('AllInputs', 'sFileName_H1'),
+                 'H4': config.get('AllInputs', 'sFileName_H4'),
+                 'D1': config.get('AllInputs', 'sFileName_D1'),
+              'W1': config.get('AllInputs', 'sFileName_W1')}
 balance_initial = 10000
 
 
@@ -123,7 +126,7 @@ def plot_profits_all_symbols(in_df_positions,sSymbolList,in_config) :       # pl
         profits_cumulated = profits.cumsum()
         profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
         plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values, label=symbol,color = turbo.colors[idx])
-        plt.title(in_config.get('Run', 'sRunName')  + '_' + in_config.get('Returns', 'Graph_Title') + in_timeframe + "_" +symbol)
+        plt.title(in_config.get('Inputs', 'Frequency')  + '_' + in_config.get('Run', 'sRunName')  + '_' + in_config.get('Returns', 'Graph_Title') + in_timeframe + "_" +symbol)
         plt.legend(loc="best")
         if symbol == 'ALL' :
             plt.savefig(path.join(sReportsPath, sRunName + '_Profits' + symbol) + '.png')
@@ -286,19 +289,19 @@ def plot_return_correlation_All(symbolList) :
 
     plt.suptitle( config.get('Correlations', 'SupTilteName') + " (" + config.get('Run', 'sRunName') + ")" + " (" + config.get('Inputs', 'Frequency') + ")",fontsize= int(config.get('Correlations', 'Correlations_SupTitleSize')))
     plt.show()
-    plt.savefig(path.join(sReportsPath,sRunName +'_Correlations.png'))
+    plt.savefig(path.join(sReportsPath,config.get('Inputs', 'Frequency') + '_' + sRunName +'_Correlations.png'))
 
 
 if __name__ == '__main__':
     #run_all_timeframes(config)
 
     string_val = config.get('Names', 'Entry_Out')
-    df_positions = read_positions(path.join(sBasePathFreq, sFileName_SMA[config.get('Inputs','Frequency')]))
-    df_positions_to_compare_against = read_positions(path.join(sMotherPath,config.get('Run_NoHysteresis','sRunName_SMA'),config.get('Inputs','Frequency'), sFileName_SMA_noHysteresis[config.get('Inputs','Frequency')]))
+    df_positions = read_positions(path.join(sBasePathFreq, sFileNames[config.get('Inputs','Frequency')]))
+  #  df_positions_to_compare_against = read_positions(path.join(sMotherPath,config.get('Run_NoHysteresis','sRunName_SMA'),config.get('Inputs','Frequency'), sFileName_SMA_noHysteresis[config.get('Inputs','Frequency')]))
     symbolList= getSymbolList(df_positions)
     symbolList.append('ALL')
-    plt.figure(3)
-    [plot_returns_durations_compare(df_positions, symbol, config,df_positions_to_compare_against) for symbol in symbolList]
+   # plt.figure(3)
+  #  [plot_returns_durations_compare(df_positions, symbol, config,df_positions_to_compare_against) for symbol in symbolList]
 
     plt.figure(4)
     plot_return_correlation_All(symbolList)
