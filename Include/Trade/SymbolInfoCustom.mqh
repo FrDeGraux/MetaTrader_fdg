@@ -12,6 +12,7 @@
 #include <Arrays\ArrayDouble.mqh>
    #include <Arrays\ArrayString.mqh>
    #include <utilReader.mqh>
+   #include <utilString.mqh>
 class CSymbolInfoCustom : public CSymbolInfo
   {
 private:
@@ -21,7 +22,6 @@ private:
    double            previous_balance;
   
 
-  
   datetime           last_bar_date;
   bool               setLastBarDate(datetime in_dt);
 public:
@@ -39,10 +39,16 @@ public:
    bool              init(CArrayString &swap_rates[]);
    int               nProcessedDeals;
       bool              hasNewBar(); 
+        int                getNDigitsFormat();
+
   };
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+int CSymbolInfoCustom::getNDigitsFormat()
+{
+      return UtilString::nDigitsFormatSymbol(this.Name());
+}
 
 
 //+------------------------------------------------------------------+

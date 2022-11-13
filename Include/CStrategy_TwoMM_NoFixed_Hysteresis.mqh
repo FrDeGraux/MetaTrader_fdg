@@ -289,9 +289,7 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::LookForEntry_StrategyCrossOver()
       sell_signal =   !Short && (fast_MA + hysteresis <= (Slow_MA)); // if we ar not alreafy shorrt
    if(buy_signal || sell_signal)
      {
-     int nDigits = 5;
-     if(StringFind(this.m_Symbol.Name(),"JPY") > -1)
-         nDigits = 3; 
+     int nDigits =this.m_Symbol.getNDigitsFormat();
       msg = DoubleToString((Slow_MA),nDigits) + "_" + DoubleToString((fast_MA),nDigits)+ "_" + DoubleToString((double)(hysteresis)/this.m_Symbol.getPointSize(),1);
          
      }

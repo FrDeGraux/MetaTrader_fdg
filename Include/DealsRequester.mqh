@@ -180,7 +180,7 @@ void DealsRequester::writeTradeHistory()
    
       
        
-            text+=StringFormat(";%-19s ;%-40s ;%-19s",o_symbol,o_comment,o_extarnal_id);
+            text+=StringFormat(";%-19s ;%-80s ;%-19s",o_symbol,o_comment,o_extarnal_id);
 
     
 

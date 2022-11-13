@@ -10,9 +10,19 @@ class UtilString
 {
    public : 
       static string unPackStringArray(CArrayString* in,char sep=";");
-      static string fromCommentToSwapRate(string in);
+      static string fromCommentToSwapRate(string& in);
+      static int nDigitsFormatSymbol(string in);
 };
-string UtilString::fromCommentToSwapRate(string in_comment)
+int UtilString::nDigitsFormatSymbol(string in)
+{
+
+      int nDigits = 5;
+      if(StringFind(in,"JPY") > -1)
+         nDigits = 3;
+       return nDigits;
+
+}
+string UtilString::fromCommentToSwapRate(string& in_comment)
 {
 
    string sep="_";                // A separator as a character
@@ -28,7 +38,19 @@ string UtilString::fromCommentToSwapRate(string in_comment)
       Print("UtilString::fromCommentToSwapRate Array assigned error");
       return "";
      }
-     return res.At(res.Total()-1);
+     in_comment = "";
+     for(int j=0 ; j < res.Total()-1 ; j++)
+     {
+     if (j==2) 
+         continue;
+         
+      if (j==0)
+             in_comment = res.At(j);
+      else
+               in_comment = in_comment + "_" + res.At(j);
+     }
+
+     return res.At(2);
 }
 string UtilString::unPackStringArray(CArrayString* _in,char sep)
 {

@@ -7,27 +7,72 @@
 #property link      "https://www.mql5.com"
 
 #include <Trade\Trade.mqh>
-
+#include <utilString.mqh>
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 class CTradeEnhanced : public CTrade
   {
 public :
-   bool              PositionClose(const string symbol,const ulong deviation,string comment);
+   bool              PositionClose(const string symbol,const ulong deviation);
+   bool              PositionCloseEnhanced(const string symbol,const ulong deviation,string comment);
    bool              PositionOpen(const string symbol,const ENUM_ORDER_TYPE order_type,const double volume,
                                   const double price,const double sl,const double tp,string comment);
    bool              SelectPosition(const string symbol);
+
+   void              setExcursions(string symbol);
+ private : 
+   datetime          startTime;
+   datetime          endTime;
+   string            s_close_commment;
+   double            best_excursion;
+   double            worst_excursion;  
+   
   };
+
+void CTradeEnhanced::setExcursions(string symbol)
+{
+int nBars =  Bars(this.RequestSymbol(),PERIOD_CURRENT,this.startTime,this.endTime);   // symbol name
+int bar_lowest = iLowest(this.RequestSymbol(),PERIOD_CURRENT,MODE_LOW,nBars,0);
+int bar_highest = iHighest(this.RequestSymbol(),PERIOD_CURRENT,MODE_HIGH,nBars,0);
+
+double highest_val = iHigh(this.RequestSymbol(),PERIOD_CURRENT,bar_highest);
+double lowest_val = iLow(this.RequestSymbol(),PERIOD_CURRENT,bar_lowest);
+
+if(this.RequestType() == ORDER_TYPE_BUY)
+   {
+   best_excursion = highest_val -  this.RequestPrice();
+   worst_excursion = this.RequestPrice() - lowest_val;
+   }
+else if(this.RequestType() == ORDER_TYPE_SELL)
+{
+   worst_excursion = highest_val -  this.RequestPrice();
+   best_excursion = this.RequestPrice() - lowest_val;
+}
+else
+   Print("CTradeEnhanced::setExcursions"  + " wrong order type");
+worst_excursion = worst_excursion*RequestVolume()*100000;
+best_excursion = best_excursion*RequestVolume()*100000;
+
+//this.s_close_commment =   DoubleToString(best_excursion,UtilString::nDigitsFormatSymbol(symbol)) + "_"+ DoubleToString(worst_excursion,UtilString::nDigitsFormatSymbol(symbol)) + "_" + s_close_commment;
+this.s_close_commment =   DoubleToString(best_excursion,UtilString::nDigitsFormatSymbol(symbol)-4) + "_"+ DoubleToString(worst_excursion,UtilString::nDigitsFormatSymbol(symbol)-4) + "_" + s_close_commment;
+
+
+   return;
+}
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 bool CTradeEnhanced::PositionOpen(const string symbol,const ENUM_ORDER_TYPE order_type,const double volume,
                                   const double price,const double sl,const double tp,string comment)
   {
+  this.s_close_commment = "";
+  this.best_excursion = 0;
+  this.worst_excursion = 0;
   comment = comment + "_" + "0"; // for swap corrected
-  return(CTrade::PositionOpen(symbol,order_type,volume,price,sl,tp,comment));
-  
+  this.startTime = TimeCurrent();
+  bool res = (CTrade::PositionOpen(symbol,order_type,volume,price,sl,tp,comment));
+  return res;
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -54,13 +99,22 @@ bool CTradeEnhanced::SelectPosition(const string symbol)
 //---
    return(res);
   }
+  bool CTradeEnhanced::PositionCloseEnhanced(const string symbol,const ulong deviation,string comment)
+ 
+  {
+  this.s_close_commment = comment;
+  this.endTime = TimeCurrent();
+     this.setExcursions(symbol);
+   return(PositionClose(symbol,deviation));
+  
+  }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-bool CTradeEnhanced::PositionClose(const string symbol,const ulong deviation,string comment)
+bool CTradeEnhanced::PositionClose(const string symbol,const ulong deviation)
   {
 
-
+  this.endTime = TimeCurrent();
    bool partial_close=false;
    int  retry_count  =10;
    uint retcode      =TRADE_RETCODE_REJECT;
@@ -97,8 +151,8 @@ bool CTradeEnhanced::PositionClose(const string symbol,const ulong deviation,str
          return(false);
         }
       //--- setting request
-      m_request.comment = comment;
-
+     // m_request.comment ="1.12048154_1.12070020_0.00027308_1.12075462";
+m_request.comment = this.s_close_commment;
       m_request.action   =TRADE_ACTION_DEAL;
       m_request.symbol   =symbol;
       m_request.volume   =PositionGetDouble(POSITION_VOLUME);
@@ -117,7 +171,9 @@ bool CTradeEnhanced::PositionClose(const string symbol,const ulong deviation,str
       if(IsHedging())
         {
          m_request.position=PositionGetInteger(POSITION_TICKET);
-         return(OrderSend(m_request,m_result));
+         bool res = OrderSend(m_request,m_result);
+    
+         return(res);
         }
       //--- order send
       if(!OrderSend(m_request,m_result))
