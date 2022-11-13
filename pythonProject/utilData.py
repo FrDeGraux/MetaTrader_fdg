@@ -1,6 +1,6 @@
 from utilMapping import from_entry_to_category
 import pandas as pd
-
+import os
 import numpy as np
 def compute_loss_SL (in_df_position) :
 
@@ -36,9 +36,11 @@ def from_in_to_out_mapping(in_df_positions,in_config) :
 
         res.append((entryIn,entryOut,row['Symbol'],(row['Profit']),hysteresis_in,hysteresis_out,(row['Reason_number'])))
     return(pd.DataFrame(res, columns =['TimeIn', 'TimeOut','Symbol', 'Profit','Hysteresis_in','Hysteresis_out','ReasonNumber']))
-def getSymbolList(in_df_positions) :
+def getSymbolList(in_df_positions,in_configcommon) :
     symbolList = in_df_positions['Symbol'].unique()
     symbolList = [item.replace(' ', '') for item in symbolList]
+    symbolList = symbolList + [(in_configcommon.get('Names', 'ALL_Symbol'))]
+
     return symbolList
 def filterBySymbol(in_df_position,in_symbol,in_config) :
     if in_symbol == in_config.get('Names', 'ALL_Symbol'):
@@ -46,6 +48,9 @@ def filterBySymbol(in_df_position,in_symbol,in_config) :
     mask = in_df_position['Symbol'] == in_symbol
     in_df_position = in_df_position[mask]
     return in_df_position
+def from_frequency_to_resample_period(in_freq) :
+    map = {'H1' : '60min','H4' : '240min','D1':'D','W1' : '7D'}
+    return map[in_freq]
 def compute_reward_tp(in_df_position) :
     mask_tp = in_df_position['Reason'] == 'DEAL_REASON_TP'
     df_tp = in_df_position[mask_tp]
@@ -69,3 +74,6 @@ def filter_on_entry_datetimes_cumulative(in_df,startTime,in_dt_second) :
     filtered_df = in_df[(in_df['TimeIn_Date'] < (in_dt_second))]
 
     return(filtered_df)
+def create_directory_if_not_exists(in_dirName):
+    if not os.path.isdir(in_dirName):
+        os.makedirs(in_dirName)

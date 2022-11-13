@@ -10,7 +10,7 @@ from utilConfig import init_config
 from utilData import filterBySymbol,getSymbolList,unpackComment_MM
 from matplotlib import cm
 
-config = init_config('config.ini')
+config = init_config('config_run_1.1_H1.ini')
 sRunName = config.get('Run', 'sRunName')
 sMotherPath = config.get('FilePth', 'sBasePath')
 sMotherPath = sMotherPath.replace("\\\\", "\\")

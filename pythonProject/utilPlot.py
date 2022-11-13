@@ -5,6 +5,8 @@ import pandas as pd
 from utilConfig import build_working_hysteresis_path
 from os import path
 from defined_enums import OptionPlotHysteresis
+def plot_ultimate_returns():
+    pass
 def plot_histo_fixed_hysteresis(in_item_list,in_cfg,in_plot_enum) :
         sFrequency =  in_cfg.get('Inputs', 'Frequency')
         sFileName = in_cfg.get('FilePth', 'sFixedCalibrationFileName')
