@@ -49,11 +49,4 @@ CICustomMA_White::~CICustomMA_White()
   {
   }
 //+------------------------------------------------------------------+
-bool CICustomMA_White::Create(const string symbol,const ENUM_TIMEFRAMES period,
-               const int ma_period,const int ma_shift,
-               const ENUM_MA_METHOD ma_method,const int applied)
-  {
   
-  
-      return true;
-  }

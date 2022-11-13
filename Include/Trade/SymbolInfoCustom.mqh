@@ -281,8 +281,10 @@ bool CSymbolInfoCustom::init(CArrayString& swap_rates[])
  UtilReader::filter_swap_array(swap_rates,swap_rates_symbol_specific,Name());
    ArrayResize(swap_rates_symbol_specific,UtilReader::getSizeBeforeNULL(swap_rates_symbol_specific));
    if (ArraySize(swap_rates_symbol_specific) == 0)
-      return false;
-
+   {
+   Print("CSymbolInfoCustom::init :' + 'Unable to init Swap rate for symbol " + this.Name());
+      return true;
+   }
   return true;
 }
 

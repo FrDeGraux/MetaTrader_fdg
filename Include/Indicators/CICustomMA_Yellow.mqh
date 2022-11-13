@@ -6,7 +6,7 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #include "Custom.mqh"
-#define INDICATOR_NAME "Custom Moving Average Input Color_White"
+#define INDICATOR_NAME "Custom Moving Average Input Color_Yellow"
 
 
 
@@ -24,7 +24,7 @@ public:
    static const int bufferSize;
    bool              Create(const string symbol,const ENUM_TIMEFRAMES period,
                const int ma_period,const int ma_shift,
-               const ENUM_MA_METHOD ma_method,const int applied);
+               const ENUM_MA_METHOD ma_method,const int applied,CMqlParams& params);
                  
                
                
@@ -50,8 +50,24 @@ CICustomMA_Yellow::~CICustomMA_Yellow()
 //+------------------------------------------------------------------+
 bool CICustomMA_Yellow::Create(const string symbol,const ENUM_TIMEFRAMES period,
                const int ma_period,const int ma_shift,
-               const ENUM_MA_METHOD ma_method,const int applied)
+               const ENUM_MA_METHOD ma_method,const int applied,CMqlParams& params)
   {
+  
 
-        return true;
+   
+
+             if(params.Total() == 0) 
+               params.Set(this.ind_Name, TYPE_STRING); // set first pramc with value ind_name
+               
+   if(!CICustomMA::Create(symbol,period,ma_period,ma_shift,ma_method,applied,params))
+      return false;
+      
+
+     if(!BufferResize(1))
+     {
+         Print("CICustomMA_Yellow Error BufferResizeHysteresis MA");
+      return(false);  
+     }
+//--- ok
+   return(true);
   }

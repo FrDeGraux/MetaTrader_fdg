@@ -48,6 +48,7 @@ return(isViewerMode());
 }
 bool UtilTerminal::useCiCustomMA_Yellow_Hysteresis()
 {
+
 return(isViewerMode());
 }
 bool UtilTerminal::isViewerModeAlt()

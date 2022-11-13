@@ -8,7 +8,10 @@
 #property version   "1.00"
 #include <CStrategy_Base.mqh>
 #include <Indicators\CICustomMA.mqh>
-#include <Indicators\CiMA_Enhanced.mqh>
+#include <Indicators\CICustomMA_Yellow.mqh>
+#include <Indicators\CICustomMA_Cyan.mqh>
+#include <Indicators\CICustomMA_White.mqh>
+#include <Indicators\CiMA_Enhanced.mqh> 
 class CStrategy_TwoMM_Base : public CStrategy_Base
   {
 private:
@@ -43,26 +46,22 @@ bool CStrategy_TwoMM_Base::InitIndicators(void)
 
          if((m_Fast = new CiMA_Enhanced(1)) == NULL)
            {
-            Print("CStrategy_TwoMM_Base CiMA_Enhanced Error creating fast MA");
+            Print("CStrategy_TwoMM_NoFixed_Hysteresis CiMA_Enhanced Error creating fast MA");
             return(false);
            }
         
      }
 
-CMqlParams params;
+CMqlParams* params = new CMqlParams;
    if(!m_Fast.Create(m_Pair, 0, this.FastPeriod,0,  (ENUM_MA_METHOD)FastMethod, PRICE_CLOSE,params))
      {
-      Print("CStrategy_TwoMM_NoFixed_Hysteresis::Error initializing fast MA");
+      Print("CStrategy_TwoMM_Base::Error initializing fast MA");
       return(false);
      }
 
-
-
-
-
    if(!m_Indis.Add(m_Fast))
      {
-      Print("CStrategy_TwoMM_NoFixed_Hysteresis::Error adding fast MA to indicator collection");
+      Print("CStrategy_TwoMM_Base::Error adding fast MA to indicator collection");
       return(false);
      }
 
@@ -70,14 +69,14 @@ CMqlParams params;
    if(m_Slow == NULL)
      {
 
-
-      if((m_Slow = new CiMA_Enhanced(1)) == NULL)
-        {
-         Print("Error creating m_Slow MA");
-         return(false);
-        }
+        if((m_Slow = new CiMA_Enhanced(1)) == NULL)
+           {
+            Print("CStrategy_TwoMM_NoFixed_Hysteresis CiMA_Enhanced Error creating fast MA");
+            return(false);
+           }
+        
      }
-
+params = new CMqlParams;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -89,7 +88,7 @@ CMqlParams params;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-   m_Slow.BufferResize(1);
+
    if(!m_Indis.Add(m_Slow))
      {
       Print("Error adding slow MA to indicator collection");
@@ -129,30 +128,37 @@ CStrategy_TwoMM_Base::~CStrategy_TwoMM_Base()
   {
 
    if(!CStrategy_Base::Init(magic,Pair,slippage,lot,useSLTP,_debugger,swap_rates))
-      Print(" CGuruEx03_ThreeMM " + " unable to initiate");
+   {
+      Print(" CStrategy_TwoMM_Base " + " unable to initiate");
+      return false;
+    }  
    return(InitIndicators());
   }
   
   bool CStrategy_TwoMM_Base::LookForEntry_StrategyCrossOver()
   {
 
-   
+   if(!this.m_Symbol.hasNewBar())
+      return true; 
+      
    if(!m_Symbol.RefreshRates())
       return false;
    m_Indis.Refresh();
 
-
-
-    double  Slow_MA = m_Slow.GetData(0,0);
+   double Slow_MA = m_Slow.GetData(0,0);
    double fast_MA = m_Fast.GetData(0,0);
-
 
    string msg = "";
 
    bool buy_signal =   !Long && (fast_MA >= (Slow_MA));
    bool sell_signal =   !Short && (fast_MA <= (Slow_MA));
 
-
+   if((Slow_MA > 10000000)|| (fast_MA>10000000))
+   {
+      Print("Undefined MA For Symbol " + this.m_Symbol.Name() );
+       return true;
+   }
+        
 
 
 
@@ -164,8 +170,10 @@ CStrategy_TwoMM_Base::~CStrategy_TwoMM_Base()
       if(StringFind(this.m_Symbol.Name(),"JPY") > -1)
          nDigits = 3;
       msg = DoubleToString((Slow_MA),nDigits) + "_" + DoubleToString((fast_MA),nDigits)+ "_" + "0";
+      Print(msg + " BUY IS TO " + DoubleToString(buy_signal) + " SELL IS TO " + DoubleToString(sell_signal));
      }
 
-   
-   return(CStrategy_Base::CheckEntry(buy_signal,sell_signal,msg));
+   bool res = CStrategy_Base::CheckEntry(buy_signal,sell_signal,msg);
+
+   return(res);
     }
