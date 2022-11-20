@@ -386,6 +386,7 @@ bool CTrade::PositionModify(const ulong ticket,const double sl,const double tp)
 //+------------------------------------------------------------------+
 bool CTrade::PositionClose(const string symbol,const ulong deviation)
   {
+  // close last opened position
    bool partial_close=false;
    int  retry_count  =10;
    uint retcode      =TRADE_RETCODE_REJECT;

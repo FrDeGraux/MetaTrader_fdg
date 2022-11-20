@@ -52,11 +52,11 @@ double CICustomATR::Main(const int index) const
 
    if(buffer==NULL) 
       return(EMPTY_VALUE);
-   double atr_value = buffer.At(index);
+   double res = buffer.At(index);
       
    
 
-   return(atr_value);
+   return(res);
   }
 //+---
 bool CICustomATR::Create(  string symbol,ENUM_TIMEFRAMES tf,int ExtPeriodATR,int AtrMultiplier_SL,int AtrMultiplier_TP) 

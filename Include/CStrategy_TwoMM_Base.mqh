@@ -31,10 +31,10 @@ protected:
    enMaTypes         SlowMethod;
    enMaTypes         FastMethod;
 public:
-                     CStrategy_TwoMM_Base(enMaTypes MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)   ;
+                     CStrategy_TwoMM_Base(string sPair,enMaTypes MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)   ;
    bool              LookForEntry_StrategyCrossOver();
                     ~CStrategy_TwoMM_Base();
-   bool              Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[]);
+   bool              Init(int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[]);
    bool              InitIndicators();
   };
 
@@ -104,7 +104,7 @@ bool CStrategy_TwoMM_Base::InitIndicators(void)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CStrategy_TwoMM_Base::CStrategy_TwoMM_Base(enMaTypes _MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)           // Constructor
+CStrategy_TwoMM_Base::CStrategy_TwoMM_Base(string sPair,enMaTypes _MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)  : CStrategy_Base(sPair)        // Constructor
   {
    ATR_MAPeriod = _ATR_MAPeriod;
    ATR_TPRange = _ATR_TPRange;
@@ -127,10 +127,10 @@ CStrategy_TwoMM_Base::~CStrategy_TwoMM_Base()
   {
   }
 //+------------------------------------------------------------------+
-bool CStrategy_TwoMM_Base::Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[])
+bool CStrategy_TwoMM_Base::Init(int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[])
   {
 
-   if(!CStrategy_Base::Init(magic,Pair,slippage,lot,useSLTP,_debugger,swap_rates))
+   if(!CStrategy_Base::Init(magic,slippage,lot,useSLTP,_debugger,swap_rates))
      {
       Print(" CStrategy_TwoMM_Base " + " unable to initiate");
       return false;
@@ -164,11 +164,6 @@ bool CStrategy_TwoMM_Base::LookForEntry_StrategyCrossOver()
       Print("Undefined MA For Symbol " + this.m_Symbol.Name());
       return true;
      }
-
-
-
-
-
 
    if(buy_signal || sell_signal)
      {

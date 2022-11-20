@@ -12,6 +12,7 @@ class UtilString
       static string unPackStringArray(CArrayString* in,char sep=";");
       static string fromCommentToSwapRate(string& in);
       static int nDigitsFormatSymbol(string in);
+      static string fromCommentToSwapRate_NotDeleteSwap(string in_comment);
 };
 int UtilString::nDigitsFormatSymbol(string in)
 {
@@ -21,6 +22,23 @@ int UtilString::nDigitsFormatSymbol(string in)
          nDigits = 3;
        return nDigits;
 
+}
+string UtilString::fromCommentToSwapRate_NotDeleteSwap(string in_comment)
+{
+   string sep="_";                // A separator as a character
+   ushort u_sep; 
+   string result[];               // An array to get strings
+   //--- Get the separator code
+   u_sep=StringGetCharacter(sep,0);
+   //--- Split the string to substrings
+   int k=StringSplit(in_comment,u_sep,result);
+   CArrayString res;
+      if(!res.AssignArray(result))
+     {
+      Print("UtilString::fromCommentToSwapRate Array assigned error");
+      return "";
+     }
+     return res.At(2);
 }
 string UtilString::fromCommentToSwapRate(string& in_comment)
 {
@@ -39,7 +57,7 @@ string UtilString::fromCommentToSwapRate(string& in_comment)
       return "";
      }
      in_comment = "";
-     for(int j=0 ; j < res.Total()-1 ; j++)
+     for(int j=0 ; j < res.Total(); j++)
      {
      if (j==2) 
          continue;

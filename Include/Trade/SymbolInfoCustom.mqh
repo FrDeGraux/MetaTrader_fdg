@@ -25,7 +25,7 @@ private:
   datetime           last_bar_date;
   bool               setLastBarDate(datetime in_dt);
 public:
-                     CSymbolInfoCustom();
+                     CSymbolInfoCustom(string sPair);
                     ~CSymbolInfoCustom();
    CArrayString      swap_rates_symbol_specific[];
    double            computeSymbolBalance();
@@ -55,9 +55,9 @@ int CSymbolInfoCustom::getNDigitsFormat()
 //|                                                                  |
 //+------------------------------------------------------------------+
 
-CSymbolInfoCustom::CSymbolInfoCustom()
+CSymbolInfoCustom::CSymbolInfoCustom(string _sPair)
   {
-
+   this.Name(_sPair);
    last_bar_date = 0;
    int nProcessedDeals = 0;
    new_balance = 0;

@@ -6,73 +6,101 @@
 #property copyright "Copyright 2021, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
 #include <CSVDebugger.mqh>
+#include <Generic\HashMap.mqh>
 #include <utilString.mqh>
+#include <Arrays\ArrayObj.mqh>
+
 class DealsRequester : public CSVDebugger
-{
-public : 
-DealsRequester(datetime _from_date,datetime _to_date,string ctx = "");
-void init(string);
-void writeTradeHistory();
-private : 
-void writeHeaders();
-datetime from_date;
-datetime to_date;
-};
+  {
+public :
+                     DealsRequester(datetime _from_date,datetime _to_date,string ctx = "");
+   void              init(string);
+   void              writeTradeHistory();
+      void              init_close_messages(CHashMap<int, string >* _chashmap_deals_msgs);
+      void           write_close_message();
+private :
+   void              writeHeaders();
+   datetime          from_date;
+   datetime          to_date;
+   int               close_msg_keys[];
+   string            close_msg_vales[];
+   CHashMap<int, string >* chashmap_deals_msgs;
+  };
+ void DealsRequester::write_close_message()
+ {
 
+ }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void DealsRequester::init_close_messages(CHashMap<int, string >* _chashmap_deals_msgs)
+  {
+chashmap_deals_msgs = _chashmap_deals_msgs;
+
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 DealsRequester::DealsRequester(datetime _from_date,datetime _to_date,string ctx) : CSVDebugger(ctx)
-{
-from_date = _from_date;
-to_date= _to_date;
-writeHeaders();
-}
+  {
+   from_date = _from_date;
+   to_date= _to_date;
+   writeHeaders();
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void DealsRequester::writeHeaders()
-{
-         string text;
-         text=StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s",
-                           " Ticket"," ;Order"," ;Time"," ;Time msc"," ;Type"," ;Entry"," ;Reason"," ;Position ID");
- 
-
-        
-         text=text + StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s",
-                           ";Volume",";Price",";Commission",";Swap",";Swap_corrected"";Profit",";Symbol",";Comment");
- 
-         
-              text += StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s",
-                             ";Ticket",";Time setup",";Type",";State",";Time expiration",
-                              ";Time done","Type filling");
-
-            text += StringFormat("%-20s %-20s %-20s %-20s",
-                              ";Type time",";Reason",";Position id",";Position by id");
-         
+  {
+   string text;
+   text=StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s",
+                     " Ticket"," ;Order"," ;Time"," ;Time msc"," ;Type"," ;Entry"," ;Reason"," ;Position ID");
 
 
 
-   
+   text=text + StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s",
+                            ";Volume",";Price",";Commission",";Swap",";Swap_corrected"";Profit",";Symbol",";Comment");
 
 
-            text+=StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s",
-                              ";Volume initial",";Volume current",";Open price",";sl",";tp",";Price current",";Price stoplimit");
+   text += StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s",
+                        ";Ticket",";Time setup",";Type",";State",";Time expiration",
+                        ";Time done","Type filling");
+
+   text += StringFormat("%-20s %-20s %-20s %-20s",
+                        ";Type time",";Reason",";Position id",";Position by id");
 
 
 
-           text+=StringFormat("%-20s %-41s %-20s",";Symbol",";Comment",";Extarnal id");
-            writeMsg(text);
-         
-         
-         
-}
 
+
+
+
+   text+=StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s",
+                      ";Volume initial",";Volume current",";Open price",";sl",";tp",";Price current",";Price stoplimit");
+
+
+
+   text+=StringFormat("%-20s %-41s %-20s",";Symbol",";Comment",";Extarnal id");
+   writeMsg(text);
+
+
+
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void DealsRequester::writeTradeHistory()
   {
-//--- request trade history 
+//--- request trade history
    HistorySelect(from_date,to_date);
    uint total_deals=HistoryDealsTotal();
    ulong ticket_history_deal=0;
-//--- for all deals 
-   for(uint i=0;i<total_deals;i++)
+//--- for all deals
+   for(uint i=0; i<total_deals; i++)
      {
-     
-      //--- try to get deals ticket_history_deal 
+
+      //--- try to get deals ticket_history_deal
       if((ticket_history_deal=HistoryDealGetTicket(i))>0)
         {
          long     deal_ticket       =HistoryDealGetInteger(ticket_history_deal,DEAL_TICKET);
@@ -107,13 +135,13 @@ void DealsRequester::writeTradeHistory()
            }
          //---
          string text="";
-      
+
          if(deal_type == DEAL_TYPE_BALANCE)
             continue;
 
 
-   
-         //--- try to get oeders ticket_history_order 
+
+         //--- try to get oeders ticket_history_order
          if(HistoryOrderSelect(deal_order))
            {
             long     o_ticket          =HistoryOrderGetInteger(deal_order,ORDER_TICKET);
@@ -141,6 +169,10 @@ void DealsRequester::writeTradeHistory()
 
             string   o_symbol          =HistoryOrderGetString(deal_order,ORDER_SYMBOL);
             string   o_comment         =HistoryOrderGetString(deal_order,ORDER_COMMENT);
+            string   extra_comment= "";
+            if(deal_entry == DEAL_ENTRY_OUT && !chashmap_deals_msgs.TryGetValue(deal_ticket,extra_comment))
+               Print("Unable to find Deal chashmap_deals_msgs.TryGetValue");
+              o_comment = deal_comment + "_" + extra_comment;
             string   str_swap_corrected = UtilString::fromCommentToSwapRate(o_comment);
             double deal_swap_corrected = StringToDouble(str_swap_corrected);
             string   o_extarnal_id     =HistoryOrderGetString(deal_order,ORDER_EXTERNAL_ID);
@@ -154,53 +186,54 @@ void DealsRequester::writeTradeHistory()
             string str_o_type_time        =TimeToString((datetime)o_type_time,TIME_DATE|TIME_MINUTES|TIME_SECONDS);
             string str_o_reason           =EnumToString((ENUM_ORDER_REASON)o_reason);
 
- text+=StringFormat("%-19d ;%-19d ;%-19s ;%-19I64d ;%-19s ;%-19s  ;%-19s ;%-19d"
-                           ,deal_ticket,deal_order,time,deal_time_msc,type,entry,str_deal_reason,deal_position_id);
- 
+            text+=StringFormat("%-19d ;%-19d ;%-19s ;%-19I64d ;%-19s ;%-19s  ;%-19s ;%-19d"
+                               ,deal_ticket,deal_order,time,deal_time_msc,type,entry,str_deal_reason,deal_position_id);
 
-      
-         text+=StringFormat(";%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19s ;%-40s",
-                           deal_volume,deal_price,deal_commission,deal_swap,deal_swap_corrected,deal_profit,deal_symbol,deal_comment);
+
+
+            text+=StringFormat(";%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19s ;%-40s",
+                               deal_volume,deal_price,deal_commission,deal_swap,deal_swap_corrected,deal_profit,deal_symbol,deal_comment);
 
             text+=StringFormat(";%-19d ;%-19s ;%-19s ;%-19s ;%-19s ;%-19s ;%-19s",
-                              o_ticket,str_o_time_setup,str_o_type,str_o_state,str_o_time_expiration,str_o_time_done
-                              ,str_o_type_filling);
-       
+                               o_ticket,str_o_time_setup,str_o_type,str_o_state,str_o_time_expiration,str_o_time_done
+                               ,str_o_type_filling);
 
-       
+
+
             text+=StringFormat(";%-19s ;%-19d ;%-19d",
-                              str_o_reason,o_position_id,o_position_by_id);
-  
-            
-         
+                               str_o_reason,o_position_id,o_position_by_id);
+
+
+
             text+=StringFormat(";%-19.2f ;%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19."+IntegerToString(digits)+
-                              "f ;%-19."+IntegerToString(digits)+"f ;%-19."+IntegerToString(digits)+
-                              "f ;%-19."+IntegerToString(digits)+"f",
-                              o_volume_initial,o_volume_current,o_open_price,o_sl,o_tp,o_price_current,o_price_stoplimit);
-   
-      
-       
+                               "f ;%-19."+IntegerToString(digits)+"f ;%-19."+IntegerToString(digits)+
+                               "f ;%-19."+IntegerToString(digits)+"f",
+                               o_volume_initial,o_volume_current,o_open_price,o_sl,o_tp,o_price_current,o_price_stoplimit);
+
+
+
             text+=StringFormat(";%-19s ;%-80s ;%-19s",o_symbol,o_comment,o_extarnal_id);
 
-    
+
 
             int d=0;
            }
          else
            {
             text+= "Order "+IntegerToString(deal_order)+" is not found in the trade history between the dates "+
-                 TimeToString(from_date,TIME_DATE|TIME_MINUTES|TIME_SECONDS)+" and "+
-                 TimeToString(to_date,TIME_DATE|TIME_MINUTES|TIME_SECONDS);
-     
+                   TimeToString(from_date,TIME_DATE|TIME_MINUTES|TIME_SECONDS)+" and "+
+                   TimeToString(to_date,TIME_DATE|TIME_MINUTES|TIME_SECONDS);
+
            }
-     
+
          writeMsg(text);
 
          int d=0;
         }
      }
-   }
+  }
 //---
 
-     
-  
+
+
+//+------------------------------------------------------------------+
