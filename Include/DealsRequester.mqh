@@ -172,7 +172,7 @@ void DealsRequester::writeTradeHistory()
             string   extra_comment= "";
             if(deal_entry == DEAL_ENTRY_OUT && !chashmap_deals_msgs.TryGetValue(deal_ticket,extra_comment))
                Print("Unable to find Deal chashmap_deals_msgs.TryGetValue");
-              o_comment = deal_comment + "_" + extra_comment;
+              o_comment =  extra_comment;
             string   str_swap_corrected = UtilString::fromCommentToSwapRate(o_comment);
             double deal_swap_corrected = StringToDouble(str_swap_corrected);
             string   o_extarnal_id     =HistoryOrderGetString(deal_order,ORDER_EXTERNAL_ID);
