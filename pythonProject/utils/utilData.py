@@ -1,4 +1,4 @@
-from utilMapping import from_entry_to_category
+from utils.utilMapping import from_entry_to_category
 import pandas as pd
 import os
 import numpy as np
@@ -9,11 +9,15 @@ def compute_loss_SL (in_df_position) :
     df_sl = df_sl[['Profit', 'Swap', 'Commission']]
     df_sl = df_sl.sum(axis=1)
     return df_sl
+def get_point_digit(in_symbol):
+    sDepositCurr = in_symbol[-3]
+    if(sDepositCurr == 'JPY'):
+        return 3
+    return 5
 def unpackComment_MM(in_df_positions) :
-    in_df_positions[['Slow_MM', 'Fast_MM', 'Hysteresis','SwapReal']] = in_df_positions['Comment()'].str.split('_', expand=True)
-    in_df_positions.drop(columns = ['SwapReal'])
+    in_df_positions[['Slow_MM', 'Fast_MM','Other','Point']] = in_df_positions['Comment()'].str.split('_', expand=True)
+    in_df_positions.drop(columns = ['Other'])
     return in_df_positions
-   # in_df_positions = in_df_positions.replace(to_replace='None', value=np.nan)
 
 # create a dataframe with in positions matched with out ones (entryIn, entryOut, etc)
 def from_in_to_out_mapping(in_df_positions,in_config) :
@@ -42,12 +46,55 @@ def getSymbolList(in_df_positions,in_configcommon) :
     symbolList = symbolList + [(in_configcommon.get('Names', 'ALL_Symbol'))]
 
     return symbolList
+def get_in_or_out_sign(in_type) :
+    if (in_type == 'DEAL_ENTRY_IN'):
+        return 1
+    if (in_type == 'DEAL_ENTRY_OUT'):
+        return -1
+    else:
+        raise Exception
+def get_gross_position(in_type) :
+    in_entry = in_type.strip()
+    if ( in_entry == 'DEAL_ENTRY_IN') :
+        return 1
+    if (in_entry == 'DEAL_ENTRY_OUT') :
+        return -1
+    raise Exception
+def get_net_position(in_type,in_entry) :
+    in_type = in_type.strip()
+    if (in_type == 'DEAL_TYPE_BUY' and in_entry == 'DEAL_ENTRY_IN') :
+        return 1
+    if (in_type == 'DEAL_TYPE_BUY' and in_entry == 'DEAL_ENTRY_OUT') :
+        return 1
+    if (in_type == 'DEAL_TYPE_SELL' and in_entry == 'DEAL_ENTRY_IN') :
+        return -1
+    if (in_type == 'DEAL_TYPE_SELL' and in_entry == 'DEAL_ENTRY_OUT') :
+        return -1
+    raise Exception
 def filterBySymbol(in_df_position,in_symbol,in_config) :
     if in_symbol == in_config.get('Names', 'ALL_Symbol'):
         return in_df_position
     mask = in_df_position['Symbol'] == in_symbol
     in_df_position = in_df_position[mask]
     return in_df_position
+def remove_none_points(in_df_position):
+    mask = in_df_position['Point'] != None
+    in_df_position = in_df_position[mask]
+    return in_df_position
+def filterOnInDeals(in_df_position):
+    if not in_df_position['Symbol'].unique() :
+        raise Exception
+    mask = in_df_position['Entry'] == 'DEAL_ENTRY_IN'
+    in_df_position_filtered = in_df_position[mask]
+    in_df_position_filtered = in_df_position_filtered.append(in_df_position.tail(1))
+    return in_df_position_filtered
+def filterOnInDeals_AndLastOut(in_df_position):
+    if not in_df_position['Symbol'].unique() :
+        raise Exception
+    mask = in_df_position['Entry'] == 'DEAL_ENTRY_IN'
+    in_df_position_filtered = in_df_position[mask]
+    in_df_position_filtered = in_df_position_filtered.append(in_df_position.tail(1))
+    return in_df_position_filtered
 def from_frequency_to_resample_period(in_freq) :
     map = {'H1' : '60min','H4' : '240min','D1':'D','W1' : '7D'}
     return map[in_freq]

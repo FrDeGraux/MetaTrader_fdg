@@ -1,17 +1,18 @@
 import pandas as pd
-from utilReader import read_positions
-from utilPlot import plot_histo_fixed_hysteresis
-from utilData import from_in_to_out_mapping,unpackComment_MM,getSymbolList
-from utilConfig import init_config
+from utils.utilReader import read_positions
+from utils.utilPlot import plot_histo_fixed_hysteresis
+from utils.utilData import from_in_to_out_mapping,unpackComment_MM,getSymbolList
+from utils.utilConfig import init_config
 from defined_enums import OptionPlotHysteresis
 from os import path
 from utilCalibrationFixedHysteresis import build_all_hyper_cubes,scatter_data,tot_hours,build_all_hyper_cubes_cumulated
 import warnings
 warnings.filterwarnings("ignore")
 
-config = init_config('config_calibratehysteresis.ini')
+config = init_config('../config_calibratehysteresis.ini')
 sBasePath = config.get('FilePth', 'sBasePath')
 sFrequency = config.get('Inputs', 'Frequency')
+
 dict_FilePath = {'H1' : config.get('Inputs', 'sFileName_H1'),'H4' : config.get('Inputs', 'sFileName_H4'),'D1' : config.get('Inputs', 'sFileName_D1'),'W1' : config.get('Inputs', 'sFileName_W1')}
 sBasisRunName =  config.get('Run', 'sBasisRunName')
 threshold = config.get('FixedHysteresisInput','threshold')

@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from utilConfig import build_working_hysteresis_path
+from utils.utilConfig import build_working_hysteresis_path
 from os import path
 from defined_enums import OptionPlotHysteresis
 def plot_ultimate_returns():

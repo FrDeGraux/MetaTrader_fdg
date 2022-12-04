@@ -1,18 +1,18 @@
-from utilReader import read_positions
+from utils.utilReader import read_positions
 import matplotlib.pyplot as plt
 from os import path
 
-from utilConfig import init_config
-from utilData import filterBySymbol, getSymbolList, unpackComment_MM,from_frequency_to_resample_period,create_directory_if_not_exists
-from utilPlot import plot_scatter_durations
+from utils.utilData import remove_none_points,get_gross_position,get_point_digit,get_in_or_out_sign,filterBySymbol, filterOnInDeals,filterOnInDeals_AndLastOut,getSymbolList, get_net_position,unpackComment_MM,from_frequency_to_resample_period,create_directory_if_not_exists
+from utils.utilPlot import plot_scatter_durations
 from itertools import combinations
 from math import floor
 
-from utilMapping import from_entry_to_category
+from utils.utilMapping import from_entry_to_category
 
 import pandas as pd
 import numpy as np
 from matplotlib import cm
+
 
 class Reporter:
   def __init__(self,in_config_specific,in_config_subrun,in_config_common):
@@ -40,9 +40,11 @@ class Reporter:
       self.balance_initial = 10000
       self.style = self.configsubrun.get('Styles','Style')
       self.df_positions =  read_positions(path.join(self.sBasePathFreq, self.sFileName))
+      self.df_positions = self.df_positions.head(1000)
       self.df_positions[self.configcommon.get('Names', 'PositionMissedParameters')] = (self.df_positions[self.configcommon.get('Names', 'PositionMissedParameters')]).astype(str)
       self.symbolList= getSymbolList(self.df_positions,self.configcommon)
-
+      self.symbolListNoALL = self.symbolList[:-1]
+      self.previous_row_average_entry_price = None
 
 
 
@@ -58,36 +60,97 @@ class Reporter:
       profits_cumulated = profits.cumsum()
       profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
 
-      plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values,
-               label=(self.freq + '_' + self.sRunName), linestyle=self.style)
+      plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values,label=(self.freq + '_' + self.sRunName), linestyle=self.style)
+  def plot_profit_by_symbol(self,in_df,in_symbol,in_timeFrame,in_color) :
+        pass
+        plt.plot(in_df.index.tolist(), in_df['Equity'].values, label=in_symbol,color=in_color)
 
-  # 1. #Profit TimeSeriees
+        plt.title(self.config.get('Inputs', 'Frequency') + '_' + self.configsubrun.get('Run','sRunName') + '_' + self.configcommon.get('Returns', 'Graph_Title') + in_timeFrame + "_" + in_symbol)
+        plt.legend(loc="best")
+        plt.show()
+
   def plot_profits_all_symbols(self):  # plot_balance
-      df_positions =  read_positions(path.join(self.sBasePathFreq, self.sFileName))
-
       in_timeframe = from_frequency_to_resample_period(self.freq)
       turbo = cm.get_cmap('turbo', len(self.symbolList))
+      df_all_equity = None
+      for idx, symbol in enumerate(self.symbolListNoALL):
+          df_equity_symbol = self.compute_equity(symbol)
+          self.plot_profit_by_symbol(df_equity_symbol,symbol,in_timeframe,turbo.colors[idx])
 
-      for idx, symbol in enumerate(self.symbolList):
-          in_df_positions_filtered = filterBySymbol(df_positions, symbol,  self.configcommon)
+          if df_all_equity :
+              df_equity_symbol = df_equity_symbol.reindex(df_all_equity.index.union(df_equity_symbol.index), method='bfill')
 
-          in_df_positions_filtered = in_df_positions_filtered[['Profit', 'Swap_corrected', 'Commission']]
-          profits = in_df_positions_filtered.resample(in_timeframe).sum()
-          profits_cumulated = profits.cumsum()
-          profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
-          plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values, label=symbol,
-                   color=turbo.colors[idx])
-          plt.title( self.config.get('Inputs', 'Frequency') + '_' +  self.configsubrun.get('Run', 'sRunName') + '_' +  self.configcommon.get(
-              'Returns', 'Graph_Title') + in_timeframe + "_" + symbol)
-          plt.legend(loc="best")
-          #plt.show()
-          if symbol == self.configcommon.get('Names', 'ALL_Symbol'):
-              plt.savefig(path.join(self.sReportsPath, self.sRunName + '_Profits' + symbol) + '.png')
+              df_all_equity = df_all_equity.reindex(df_equity_symbol.index)
+              df_all_equity = df_all_equity + df_equity_symbol
+          else :
+              df_all_equity = df_equity_symbol
+          pass
 
+      self.plot_profit_by_symbol(df_all_equity,'ALL',in_timeframe,turbo.colors[len(self.symbolList)-1])
+
+      plt.savefig(path.join(self.sReportsPath, self.sRunName + '_Profits' + symbol) + '.png')
+
+
+  def get_avg_entry_price(self,in_ID,price,in_symbol,in_previous_positioning,in_type,in_entry,in_quantity = 1):
+
+      if in_entry == 'DEAL_ENTRY_OUT' :
+        mask = (self.df_positions['PositionID()'] == in_ID) & (self.df_positions['Symbol'] == in_symbol) & (self.df_positions['Entry'] == 'DEAL_ENTRY_IN')
+        entry_row = self.df_positions[mask]
+        price = entry_row['Price']
+
+      if self.previous_row_average_entry_price is None : # first buy/sell
+            average_entry_price = price
+      else :
+          new_positioning = in_previous_positioning + get_in_or_out_sign(in_entry) * abs(in_quantity)
+
+          if new_positioning == 0 : # portfolio is sold out, avg price = 0
+            average_entry_price = 0
+          else :
+            average_entry_price =  ((1/new_positioning)*(in_previous_positioning*(self.previous_row_average_entry_price) + get_in_or_out_sign(in_entry)*price))
+      if in_entry == 'DEAL_ENTRY_IN' :
+        self.previous_row_average_entry_price = average_entry_price
+      return average_entry_price
+
+  def compute_equity(self,in_symbol) :
+
+      positions =  self.df_positions[['Symbol','Type','Entry','Price','Commission','Swap_corrected','Profit','PositionID()','Point']]
+      positions.columns = ['Symbol','Type','Entry','Price','Commission','Swap_corrected','Balance','PositionID','Point_value']
+      positions = filterBySymbol(positions, in_symbol,self.configcommon)
+
+      positions['positioning_net'] = positions.apply(lambda x: get_net_position(x.Type,x.Entry),axis=1)
+      positions['positioning_gross'] = positions.apply(lambda x: get_gross_position(x.Entry),axis=1)
+
+      positions['positioning_net']  = positions['positioning_net'].cumsum()
+      positions['positioning_gross']  = positions['positioning_gross'].cumsum()
+
+      positions['positioning_gross_shifted'] = positions['positioning_gross'].shift(1)
+
+      positions['avgEntryPrice'] = positions.apply(lambda x: self.get_avg_entry_price(x.PositionID,x.Price,x.Symbol,x.positioning_gross_shifted,x.Type,x.Entry,1), axis=1)
+
+      positions_cumulative = positions[['Commission','Swap_corrected','Balance']].cumsum()
+      positions_cumulative['Final_balance'] = positions_cumulative[['Commission','Swap_corrected','Balance']].sum(axis=1)
+      positions_cumulative[['Symbol','avgEntryPrice','Entry','positioning_net','Point_value','positioning_gross']] = positions[['Symbol','avgEntryPrice','Entry','positioning_net','Point_value','positioning_gross']]
+      positions_cumulative = filterOnInDeals(positions_cumulative)
+      prices_list = pd.read_csv(path.join(self.configcommon.get('FilePth', 'sBaseDevelopmentPath'),'Data',in_symbol,in_symbol + '_' + self.freq + '.csv'),delim_whitespace=True)
+      prices_list = prices_list[['<DATE>','<TIME>','<OPEN>']]
+      prices_list['<DateTime>'] = prices_list['<DATE>'] + ' ' + prices_list['<TIME>']
+      prices_list = prices_list.drop(columns = ['<DATE>','<TIME>'])
+      prices_list = prices_list.set_index('<DateTime>')
+      positions_cumulative = positions_cumulative.reindex(prices_list.index, method='ffill')
+      positions_cumulative = positions_cumulative.dropna(how='all')
+      positions_cumulative = positions_cumulative.dropna(subset=['Point_value'])
+      positions_cumulative['Price'] = prices_list['<OPEN>']
+
+      positions_cumulative['PL_Points'] =get_point_digit( positions_cumulative['Symbol'])*(positions_cumulative['Price'] - positions_cumulative['avgEntryPrice'])
+      positions_cumulative['Point_value'] = pd.to_numeric(positions_cumulative['Point_value'].str.strip())
+      positions_cumulative['PL_Points_Euro'] = positions_cumulative['PL_Points']*positions_cumulative['Point_value']
+      positions_cumulative['PL_final']  = 100000*0.01*positions_cumulative['positioning_net']*positions_cumulative['PL_Points_Euro']
+      positions_cumulative['Equity'] = positions_cumulative['PL_final'] + positions_cumulative['Final_balance']
+      positions_cumulative = positions_cumulative.drop(columns=['PL_Points','PL_Points_Euro', 'Point_value','Symbol','Price','avgEntryPrice'])    #2
+      return positions_cumulative
   def plot_return_durations_all_symbols(self):
       [self.plot_return_durations(symbol) for symbol in self.symbolList]
   def plot_return_durations(self, in_symbol):
-      df_positions =  read_positions(path.join(self.sBasePathFreq, self.sFileName))
 
       df_positions = filterBySymbol(self.df_positions, in_symbol,self.configcommon)
 
@@ -178,6 +241,7 @@ class Reporter:
       return in_df_position
 
   def plot_return_correlation_ByPair(self,in_nRowsTotalSubPlot,in_nColsTotalSubPlot,in_plot_count,symbol_one, symbol_two):
+
       df_positions =  read_positions(path.join(self.sBasePathFreq, self.sFileName))
 
       mask = df_positions['Entry'] ==  self.configcommon.get('Names', 'Entry_Out')
@@ -246,9 +310,10 @@ class Reporter:
       plt.show()
       plt.savefig(path.join(self.sReportsPath, self.config.get('Inputs', 'Frequency') + '_' + self.sRunName + '_Correlations.png'))
   def run(self):
-   #   self.plot_return_correlation_All()
-      #plt.figure(1)
+
+     #self.plot_return_correlation_All()
+     #plt.figure(1)
      # self.plot_histogram_SL_TP()
-      self.plot_return_durations_all_symbols()
-      plt.figure(2)
-      self.plot_profits_all_symbols()
+     # self.plot_return_durations_all_symbols()
+      #plt.figure(2)
+    self.plot_profits_all_symbols()

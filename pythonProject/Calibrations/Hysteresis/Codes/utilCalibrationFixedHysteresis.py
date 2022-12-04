@@ -1,15 +1,15 @@
 
 import matplotlib.pyplot as plt
-from utilData import filterBySymbol
+from utils.utilData import filterBySymbol
 import datetime
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from utilData import filterBySymbol,getSymbolList,filter_on_entry_datetimes,filter_on_entry_datetimes_cumulative
+from utils.utilData import filterBySymbol,getSymbolList,filter_on_entry_datetimes,filter_on_entry_datetimes_cumulative
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
-from utilConfig import init_config
+from utils.utilConfig import init_config
 
 from os import path
 import os
