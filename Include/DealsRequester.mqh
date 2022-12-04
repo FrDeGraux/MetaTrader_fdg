@@ -116,6 +116,7 @@ void DealsRequester::writeTradeHistory()
          double   deal_volume       =HistoryDealGetDouble(ticket_history_deal,DEAL_VOLUME);
          double   deal_price        =HistoryDealGetDouble(ticket_history_deal,DEAL_PRICE);
          double   deal_commission   =HistoryDealGetDouble(ticket_history_deal,DEAL_COMMISSION);
+
          double   deal_swap         =HistoryDealGetDouble(ticket_history_deal,DEAL_SWAP);
          double   deal_profit       =HistoryDealGetDouble(ticket_history_deal,DEAL_PROFIT);
 
@@ -185,7 +186,6 @@ void DealsRequester::writeTradeHistory()
             string str_o_type_filling     =EnumToString((ENUM_ORDER_TYPE_FILLING)o_type_filling);
             string str_o_type_time        =TimeToString((datetime)o_type_time,TIME_DATE|TIME_MINUTES|TIME_SECONDS);
             string str_o_reason           =EnumToString((ENUM_ORDER_REASON)o_reason);
-
             text+=StringFormat("%-19d ;%-19d ;%-19s ;%-19I64d ;%-19s ;%-19s  ;%-19s ;%-19d"
                                ,deal_ticket,deal_order,time,deal_time_msc,type,entry,str_deal_reason,deal_position_id);
 
