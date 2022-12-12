@@ -47,8 +47,13 @@ class Reporter:
       self.previous_row_average_entry_price = None
 
 
-
-
+      self.has_output_with_points = self.config.get('Features','hasPoints')
+      self.target_file_point_value = self.config.get('Features','targetFilePointValue')
+  def add_point_value_from_outside(self):
+      df_outside_positions = read_positions()
+      df_outside_positions = df_outside_positions['Datetime','Point']
+     # df_positions['Point'] = df_positions.apply(lambda x: get_point_value_from_outside(df_outside_positions,x.index),axis=1)
+      pass
   def plot_profit_timeframe(self):
 
       sFilePath = self.sFileName
@@ -163,7 +168,7 @@ class Reporter:
       prices_list_D1 = (prices_list_D1[mask])
 
       positions_cumulative = positions_cumulative.reindex(prices_list_D1.index, method='bfill')
-      pass
+      return positions_cumulative
   def plot_return_durations_all_symbols(self):
       [self.plot_return_durations(symbol) for symbol in self.symbolList]
   def plot_return_durations(self, in_symbol):
