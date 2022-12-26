@@ -10,14 +10,17 @@
 #include <utilString.mqh>
 #include <Arrays\ArrayObj.mqh>
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 class DealsRequester : public CSVDebugger
   {
 public :
                      DealsRequester(datetime _from_date,datetime _to_date,string ctx = "");
    void              init(string);
    void              writeTradeHistory();
-      void              init_close_messages(CHashMap<int, string >* _chashmap_deals_msgs);
-      void           write_close_message();
+   void              init_close_messages(CHashMap<int, string >* _chashmap_deals_msgs);
+   void              write_close_message();
 private :
    void              writeHeaders();
    datetime          from_date;
@@ -26,16 +29,19 @@ private :
    string            close_msg_vales[];
    CHashMap<int, string >* chashmap_deals_msgs;
   };
- void DealsRequester::write_close_message()
- {
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void DealsRequester::write_close_message()
+  {
 
- }
+  }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 void DealsRequester::init_close_messages(CHashMap<int, string >* _chashmap_deals_msgs)
   {
-chashmap_deals_msgs = _chashmap_deals_msgs;
+   chashmap_deals_msgs = _chashmap_deals_msgs;
 
   }
 //+------------------------------------------------------------------+
@@ -58,8 +64,8 @@ void DealsRequester::writeHeaders()
 
 
 
-   text=text + StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s",
-                            ";Volume",";Price",";Commission",";Swap",";Swap_corrected"";Profit",";Symbol",";Comment");
+   text=text + StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s",
+                            ";Volume",";Price",";Commission",";Swap",";Swap_corrected"";Profit",";Symbol",";MA_Fast",";MA_slow",";ATR",";Comment");
 
 
    text += StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s",
@@ -69,18 +75,12 @@ void DealsRequester::writeHeaders()
    text += StringFormat("%-20s %-20s %-20s %-20s",
                         ";Type time",";Reason",";Position id",";Position by id");
 
-
-
-
-
-
-
    text+=StringFormat("%-20s %-20s %-20s %-20s %-20s %-20s %-20s",
                       ";Volume initial",";Volume current",";Open price",";sl",";tp",";Price current",";Price stoplimit");
 
 
 
-   text+=StringFormat("%-20s %-41s %-20s",";Symbol",";Comment",";Extarnal id");
+   text+=StringFormat("%-41s %-20s %-20s %-20s %-20s %-20s",";Comment",";Extarnal id",";MFE",";MAE",";Commissions",";Point");
    writeMsg(text);
 
 
@@ -173,9 +173,33 @@ void DealsRequester::writeTradeHistory()
             string   extra_comment= "";
             if(chashmap_deals_msgs.TryGetValue(deal_ticket,extra_comment))
                Print("Unable to find Deal chashmap_deals_msgs.TryGetValue");
-              o_comment =  extra_comment;
-            string   str_swap_corrected = UtilString::fromCommentToSwapRate(o_comment);
-            double deal_swap_corrected = StringToDouble(str_swap_corrected);
+
+            string  str_swap_corrected = "";
+            string  str_ATR = "";
+            string s_MAE = "";
+            string s_MFE = "";
+
+            string s_commission = "";
+            string s_pointValue = "";
+
+            string  str_MA_fast =  UtilString::extractComment(o_comment,0);
+            string  str_MA_slow = UtilString::extractComment(o_comment,1);
+            s_MAE = UtilString::extractComment(extra_comment,0);
+            s_MFE = UtilString::extractComment(extra_comment,1);
+            s_commission = UtilString::extractComment(extra_comment,2);
+            s_pointValue = UtilString::extractComment(extra_comment,3);
+            if(deal_entry == DEAL_ENTRY_OUT)
+               str_swap_corrected = UtilString::extractComment(o_comment,3);
+
+            else
+               str_ATR = UtilString::extractComment(o_comment,2);
+
+
+
+
+
+
+
             string   o_extarnal_id     =HistoryOrderGetString(deal_order,ORDER_EXTERNAL_ID);
 
             string str_o_time_setup       =TimeToString((datetime)o_time_setup,TIME_DATE|TIME_MINUTES|TIME_SECONDS);
@@ -190,9 +214,8 @@ void DealsRequester::writeTradeHistory()
                                ,deal_ticket,deal_order,time,deal_time_msc,type,entry,str_deal_reason,deal_position_id);
 
 
-
-            text+=StringFormat(";%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19s ;%-40s",
-                               deal_volume,deal_price,deal_commission,deal_swap,deal_swap_corrected,deal_profit,deal_symbol,deal_comment);
+            text+=StringFormat(";%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19s ;%-19s ;%-19s ;%-19s  ;%-40s",
+                               deal_volume,deal_price,deal_commission,deal_swap,str_swap_corrected,deal_profit,deal_symbol,str_MA_fast,str_MA_slow,str_ATR,deal_comment);
 
             text+=StringFormat(";%-19d ;%-19s ;%-19s ;%-19s ;%-19s ;%-19s ;%-19s",
                                o_ticket,str_o_time_setup,str_o_type,str_o_state,str_o_time_expiration,str_o_time_done
@@ -212,7 +235,7 @@ void DealsRequester::writeTradeHistory()
 
 
 
-            text+=StringFormat(";%-19s ;%-80s ;%-19s",o_symbol,o_comment,o_extarnal_id);
+            text+=StringFormat(";%-80s ;% -19s; %-19s;%-19s;%-19s;% -19s",o_comment,o_extarnal_id,s_MFE,s_MAE,s_commission,s_pointValue);
 
 
 
