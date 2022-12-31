@@ -189,7 +189,7 @@ void DealsRequester::writeTradeHistory()
             s_commission = UtilString::extractComment(extra_comment,2);
             s_pointValue = UtilString::extractComment(extra_comment,3);
             if(deal_entry == DEAL_ENTRY_OUT)
-               str_swap_corrected = UtilString::extractComment(o_comment,3);
+               str_swap_corrected = UtilString::extractComment(o_comment,2);
 
             else
                str_ATR = UtilString::extractComment(o_comment,2);
@@ -214,7 +214,7 @@ void DealsRequester::writeTradeHistory()
                                ,deal_ticket,deal_order,time,deal_time_msc,type,entry,str_deal_reason,deal_position_id);
 
 
-            text+=StringFormat(";%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19.2f ;%-19s ;%-19s ;%-19s ;%-19s  ;%-40s",
+            text+=StringFormat(";%-19.2f ;%-19."+IntegerToString(digits)+"f ;%-19.2f ;%-19.2f ;%-19s  ;%-19.2f ;%-19s ;%-19s ;%-19s ;%-19s  ;%-40s",
                                deal_volume,deal_price,deal_commission,deal_swap,str_swap_corrected,deal_profit,deal_symbol,str_MA_fast,str_MA_slow,str_ATR,deal_comment);
 
             text+=StringFormat(";%-19d ;%-19s ;%-19s ;%-19s ;%-19s ;%-19s ;%-19s",
