@@ -11,7 +11,7 @@ def read_positions(sBaseTickPath) :
     df_positions = df_positions[list_second_trial]
     df_positions.columns = df_positions.columns.str.replace(' ', '',regex = True)
     df_positions.columns = df_positions.columns.str.replace('(missedstringparameter)','',regex = True)
-
+    df_positions = pd.concat([df_positions,],axis=1)
 
 
 

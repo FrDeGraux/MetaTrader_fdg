@@ -22,9 +22,13 @@ def unpackComment_MM_NoPoint(in_df_positions) :
 def unpackComment_MM(in_df_positions) :
     try :
       in_df_positions[['Slow_MM', 'Fast_MM','Other','Point']] = in_df_positions['Comment()'].str.split('_', expand=True)
+      in_df_positions = in_df_positions['Slow_MM', 'Fast_MM']
+      in_df_positions['Swap_corrected'] = 0
     except Exception :
         try :
             in_df_positions[['Slow_MM', 'Fast_MM', 'Other']] = in_df_positions['Comment()'].str.split('_',expand=True)
+            in_df_positions.columns = ['Slow_MM', 'Fast_MM', 'Swap_corrected']
+
         except Exception :
             in_df_positions[['Commission','Point']] = in_df_positions['Comment'].str.split('_',expand=True)
 
@@ -219,9 +223,9 @@ def compute_resampled_return(equities_all_symbol,in_balance_initial):
       for item in equities_all_symbol.keys() :
 
           equity = equities_all_symbol[item]
-          equity['EquityChange'] = equity['Equity'].diff(1)
+          equity['EquityChange'] = equity[item + '_Equity'].diff(1)
 
-          equity = equity.drop(columns=['Equity'])
+          equity = equity.drop(columns=[item + '_Equity'])
           equity_resample = pd.DataFrame(equity.resample('W').sum())
           equity_resample['Equity'] = equity_resample['EquityChange'].cumsum()
           equity_resample['Balance'] =in_balance_initial + equity_resample['Equity']

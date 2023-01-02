@@ -69,18 +69,17 @@ class Reporter:
   def plot_profit_by_symbol(self,in_df,in_symbol,in_timeFrame,in_color) :
 
         if in_symbol == 'ALL' :
-            in_df['Commission_cumulated'] = in_df['Commission'].cumsum()
-            in_df['swap_cumulated'] = in_df['Swap_corrected'].cumsum()
 
-            plt.plot(in_df.index.tolist(), in_df['Equity'] + in_df['Commission_cumulated'], label='commissions', color=in_color,linestyle = 'dashed')
-            plt.plot(in_df.index.tolist(), in_df['Equity'] + in_df['Commission_cumulated']-in_df['swap_cumulated'], label='swaps', color=in_color,linestyle = 'dashed')
 
-        plt.plot(in_df.index.tolist(), in_df['Equity'].values, label=in_symbol,color=in_color)
+            plt.plot(in_df.index.tolist(), in_df[in_symbol + '_Equity'] + in_df[in_symbol + '_Commission'], label='commissions',linestyle = 'dashed')
+            plt.plot(in_df.index.tolist(), in_df[in_symbol + '_Equity'] + in_df[in_symbol + '_Commission']-in_df[in_symbol +'_Swap_corrected'], label='swaps',linestyle = 'dashed')
+
+        plt.plot(in_df.index.tolist(), in_df[in_symbol + '_Equity'].values, label=in_symbol,color=in_color)
 
         plt.title(self.config.get('Inputs', 'Frequency') + '_' + self.configsubrun.get('Run','sRunName') + '_' + self.configcommon.get('Returns', 'Graph_Title') + in_timeFrame + "_" + in_symbol)
 
 
-        plt.legend(loc="best")
+        plt.legend(loc="lower left")
 
 
         monthFmt = mdates.DateFormatter('%Y')
@@ -93,7 +92,7 @@ class Reporter:
   def process_data(self):
 
       self.compute_balance()
-      self.df_positions['returns'] = compute_return(self.df_positions,self.configcommon)
+      #self.df_positions['returns'] = compute_return(self.df_positions,self.configcommon)
       self.compute_equity_all_symbol()
       pass
   def compute_equity_all_symbol(self):
@@ -115,16 +114,18 @@ class Reporter:
       res_commissions = res[commissions_headers]
       res_swaps = res[swap_headers]
       equities_all = pd.DataFrame()
-      equities_all['Equity'] = res_equities.sum(axis=1)
-      equities_all['Commission'] = res_commissions.sum(axis=1)
-      equities_all['Swap_corrected'] = res_swaps.sum(axis=1)
+      equities_all['ALL_Equity'] = res_equities.sum(axis=1)
+      equities_all['ALL_Commission'] = res_commissions.sum(axis=1)
+      equities_all['ALL_Swap_corrected'] = res_swaps.sum(axis=1)
 
       self.equities_all_symbol.update({'ALL' : equities_all})
 
       sFilePath = path.join(self.sBasePathFreq,self.sFileOutput  + '_equities.csv')
       if bRecomputeData is True  :
-          toExport = pd.concat(self.equities_all_symbol,axis=1)
-          toExport.to_csv(sFilePath)
+          df = pd.DataFrame()
+          for key in self.equities_all_symbol :
+            df = pd.merge(df,self.equities_all_symbol[key], left_index=True,right_index=True, how='outer')
+          df.to_csv(sFilePath)
 
       pass
   def plot_profits_all_symbols(self):  # plot_balance
@@ -137,11 +138,13 @@ class Reporter:
       plt_overwrite_and_save(path.join(self.sReportsPath, self.sRunName + '_Profits' ) + '.png')
       plt.close()
 
+
   def get_avg_entry_price(self,in_ID,price,in_symbol,in_previous_positioning,in_type,in_entry,in_quantity = 1):
 
       if in_entry == 'DEAL_ENTRY_OUT' :
         entry_row = self.df_positions[(self.df_positions['PositionID()'] == in_ID) & (self.df_positions['Symbol'] == in_symbol) & (self.df_positions['Entry'] == 'DEAL_ENTRY_IN')]
         price = entry_row['Price']
+          # find corresponding prrice
 
       if self.previous_row_average_entry_price is None : # first buy/sell
             average_entry_price = price
@@ -199,10 +202,13 @@ class Reporter:
       plt.close()
   def compute_equity(self,in_symbol) :
 
-      sFilePath = path.join(self.sBasePathFreq,self.sFileOutput + '_' + in_symbol + '_equities.csv')
+      sFilePath = path.join(self.sBasePathFreq,self.sFileOutput  + '_equities.csv')
+
       if path.exists(sFilePath) is True :
             res = pd.read_csv(sFilePath)
-            return res[in_symbol + ['Equity','Commission','Swap_corrected']]
+            res = res.set_index('idx')
+            res.index = pd.to_datetime(res.index)
+            return res[[in_symbol + '_' +  item for item in ['Equity','Commission','Swap_corrected']]]
       positions =  self.df_positions[['Symbol','Type','Entry','Price','Commissions','Swap_corrected','Profit','PositionID()','Point']]
       positions.columns = ['Symbol','Type','Entry','Price','Commission','Swap_corrected','Profit','PositionID','Point']
       positions = filterBySymbol(positions, in_symbol,self.configcommon)
@@ -213,12 +219,16 @@ class Reporter:
       positions['positioning_gross'] = positions.apply(lambda x: get_gross_position(x.Entry),axis=1)
       positions['Commission'] = pd.to_numeric( positions['Commission'], errors='coerce')
       positions['Swap_corrected'] = pd.to_numeric( positions['Swap_corrected'], errors='coerce')
+      positions['Swap_corrected'] = positions['Swap_corrected'].fillna(0)
+
       positions['Profit'] = pd.to_numeric( positions['Profit'], errors='coerce')
       positions['Commission'] = positions['Commission'].fillna(0)
 
-      positions['Total_PL'] = positions['Swap_corrected'] + positions['Profit'] - positions['Commission']
 
-      positions['Total_PL_cumulative'] = positions[['Total_PL']].cumsum()
+      positions['Profit_cumulative'] = positions[['Profit']].cumsum()
+      positions['Commission'] = positions[['Commission']].cumsum()
+      positions['Swap_corrected'] = positions[['Swap_corrected']].cumsum()
+      positions['Total_PL'] = positions['Swap_corrected'] + positions['Profit_cumulative']
 
       positions['positioning_net']  = positions['positioning_net'].cumsum()
       positions['positioning_gross']  = positions['positioning_gross'].cumsum()
@@ -227,17 +237,16 @@ class Reporter:
       #positions['avgEntryPrice'] = positions['Price']
       positions['avgEntryPrice'] = positions.apply(lambda x: self.get_avg_entry_price(x.PositionID,x.Price,x.Symbol,x.positioning_gross_shifted,x.Type,x.Entry,1), axis=1)
       self.previous_row_average_entry_price = None
-      positions_cumulative = positions[['Total_PL']].cumsum()
-      positions_cumulative[['Symbol','avgEntryPrice','Entry','positioning_net','Point','positioning_gross','Commission','Swap_corrected']] = positions[['Symbol','avgEntryPrice','Entry','positioning_net','Point','positioning_gross','Commission','Swap_corrected']]
-      positions_cumulative = filterOnInDeals(positions_cumulative)
+      positions[['Symbol','avgEntryPrice','Entry','positioning_net','Point','positioning_gross','Commission','Swap_corrected']] = positions[['Symbol','avgEntryPrice','Entry','positioning_net','Point','positioning_gross','Commission','Swap_corrected']]
+      positions_cumulative = filterOnInDeals(positions)
       prices_list_D1 = pd.read_csv(path.join(self.configcommon.get('FilePth', 'sBaseDevelopmentPath'),'Data',in_symbol,in_symbol + '_' + 'D1' + '.csv'),delim_whitespace=True)
       prices_list_D1 = prices_list_D1[['<DATE>','<CLOSE>']]
       prices_list_D1['<DateTime>'] = prices_list_D1['<DATE>']
       prices_list_D1 = prices_list_D1[['<DateTime>', '<CLOSE>']]
       prices_list_D1 = prices_list_D1.set_index('<DateTime>')
       lastDay = pd.Timestamp(pd.to_datetime(positions_cumulative.index[-1])).ceil(freq='D')
-      positions_cumulative_com_swap = positions_cumulative[['Commission','Swap_corrected']].reindex(prices_list_D1.index)
-      positions_cumulative_com_swap =positions_cumulative_com_swap.fillna(0)
+      positions_cumulative_com_swap = positions_cumulative[['Commission','Swap_corrected']].reindex(prices_list_D1.index,method='ffill')
+      positions_cumulative_com_swap =positions_cumulative_com_swap.fillna(method='ffill')
       positions_cumulative = positions_cumulative.reindex(prices_list_D1.index, method='ffill')
       positions_cumulative = positions_cumulative.drop(['Commission','Swap_corrected'],axis=1)
       positions_cumulative = pd.merge(positions_cumulative,positions_cumulative_com_swap,left_index=True, right_index=True, how='outer')
@@ -269,8 +278,8 @@ class Reporter:
 
       positions_cumulative['Equity'] = positions_cumulative['Equity'].fillna(positions_cumulative['Total_PL'])
 
-      res = positions_cumulative[['Equity','Commission','Swap_corrected']]
-
+      res = positions_cumulative[['Equity','Commission','Swap_corrected']] # Equity will include swap_corrected + com
+      res.columns = [in_symbol + '_' + item for item in res.columns]
       return res
 
   def plot_return_durations_all_symbols(self):
@@ -529,13 +538,13 @@ class Reporter:
     # self.plot_return_correlation_symbols()
 
      #self.plot_histogram_SL_TP()
-     plt.figure()
+     plt.figure(figsize=(15, 15))
      self.plot_profits_all_symbols()
 
 
      self.plot_return_durations_all_symbols()
      self.plot_return_correlation_AllCombinations()
-     plt.figure()
+     plt.figure(figsize=(15, 15))
 
      self.plot_MAE_MFE()
      pass
