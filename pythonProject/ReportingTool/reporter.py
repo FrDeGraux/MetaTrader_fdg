@@ -37,6 +37,7 @@ class Reporter:
       self.sDurationReturnPath = path.join(self.sReportsPath, self.configcommon.get('FilePth', 'sDurationPath'))
       self.sFileName =  self.config.get('Inputs', 'sFileName')
 
+      self.lastDayEquity = 0
       sFileOutput = self.sFileName.split('.')
       self.sFileOutput  = ''.join(sFileOutput[:-1])
       create_directory_if_not_exists(self.sDurationReturnPath)
@@ -132,7 +133,11 @@ class Reporter:
       in_timeframe  = from_frequency_to_resample_period(self.freq)
       turbo = cm.get_cmap('turbo', len(self.symbolList))
       df_all_equity = None
+
       for idx, symbol in enumerate(self.symbolList):
+          if symbol == 'ALL' :
+              plt_overwrite_and_save(path.join(self.sReportsPath, self.sRunName + '_ProfitsSymbols') + '.png')
+
           df_equity_symbol = self.equities_all_symbol[symbol]
           self.plot_profit_by_symbol(df_equity_symbol,symbol,in_timeframe,turbo.colors[idx])
       plt_overwrite_and_save(path.join(self.sReportsPath, self.sRunName + '_Profits' ) + '.png')
@@ -203,8 +208,9 @@ class Reporter:
   def compute_equity(self,in_symbol) :
 
       sFilePath = path.join(self.sBasePathFreq,self.sFileOutput  + '_equities.csv')
-
-      if path.exists(sFilePath) is True :
+      bToRecompute = not(path.exists(sFilePath))
+      bToRecompute = False
+      if bToRecompute is True :
             res = pd.read_csv(sFilePath)
             res = res.set_index('idx')
             res.index = pd.to_datetime(res.index)
@@ -234,8 +240,8 @@ class Reporter:
       positions['positioning_gross']  = positions['positioning_gross'].cumsum()
 
       positions['positioning_gross_shifted'] = positions['positioning_gross'].shift(1)
-      #positions['avgEntryPrice'] = positions['Price']
-      positions['avgEntryPrice'] = positions.apply(lambda x: self.get_avg_entry_price(x.PositionID,x.Price,x.Symbol,x.positioning_gross_shifted,x.Type,x.Entry,1), axis=1)
+      positions['avgEntryPrice'] = positions['Price']
+      #positions['avgEntryPrice'] = positions.apply(lambda x: self.get_avg_entry_price(x.PositionID,x.Price,x.Symbol,x.positioning_gross_shifted,x.Type,x.Entry,1), axis=1)
       self.previous_row_average_entry_price = None
       positions[['Symbol','avgEntryPrice','Entry','positioning_net','Point','positioning_gross','Commission','Swap_corrected']] = positions[['Symbol','avgEntryPrice','Entry','positioning_net','Point','positioning_gross','Commission','Swap_corrected']]
       positions_cumulative = filterOnInDeals(positions)
@@ -245,6 +251,8 @@ class Reporter:
       prices_list_D1 = prices_list_D1[['<DateTime>', '<CLOSE>']]
       prices_list_D1 = prices_list_D1.set_index('<DateTime>')
       lastDay = pd.Timestamp(pd.to_datetime(positions_cumulative.index[-1])).ceil(freq='D')
+      if (lastDay > self.lastDayEquity) :
+          self.lastDayEquity = lastDay
       positions_cumulative_com_swap = positions_cumulative[['Commission','Swap_corrected']].reindex(prices_list_D1.index,method='ffill')
       positions_cumulative_com_swap =positions_cumulative_com_swap.fillna(method='ffill')
       positions_cumulative = positions_cumulative.reindex(prices_list_D1.index, method='ffill')
@@ -362,6 +370,8 @@ class Reporter:
       edgeWidth = 0.12
       color_maps = [self.configcommon.get('SL_TP_Histogram', 'Color_TP'), self.configcommon.get('SL_TP_Histogram', 'Color_SL'),
                     self.configcommon.get('SL_TP_Histogram', 'Color_Expert')]
+
+
       names = ['TP', 'SL', 'Expert']
 
       for count_X, df_plt in enumerate(dataframes_processed):
@@ -436,7 +446,7 @@ class Reporter:
       res = res.dropna()
       res.columns = ['Return_' + symbol_one, 'Return_' + symbol_two]
       ax1 = plt.subplot(in_nRowsTotalSubPlot, in_nColsTotalSubPlot, in_plot_count)
-      plt.scatter(res.iloc[:, 0], res.iloc[:, 1], s=1,
+      plt.scatter(res.iloc[:, 0], res.iloc[:, 1], s=0.5,
                   label=('correlations' + symbol_one + '_' + symbol_two))
 
       ax1.set_xlim([-xlim,xlim])
@@ -445,7 +455,7 @@ class Reporter:
 
       m, b = np.polyfit(res.iloc[:, 0], res.iloc[:, 1], 1)
 
-      plt.plot(res.iloc[:, 0], m * (res.iloc[:, 0]) + b,linewidth = 0.5)
+      plt.plot(res.iloc[:, 0], m * (res.iloc[:, 0]) + b,linewidth = 0.25)
       plt.title((symbol_one + '_' + symbol_two + '(' + str(round(m, 2)) + ')'),
                 fontsize=self.configcommon.get('Correlations', 'Correlations_Font_Size'))
       plt.xticks(fontsize=5)
