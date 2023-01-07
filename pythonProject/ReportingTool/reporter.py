@@ -1,6 +1,7 @@
 from utils.utilReader import read_positions
 import matplotlib.pyplot as plt
 from os import path
+from scipy.stats import norm
 
 from utils.utilData import compute_resampled_return,compute_profit_durations,compute_MAE_MFE,compute_return,remove_none_points,get_gross_position,get_point_digit,get_in_or_out_sign,filterBySymbol, filterOnInDeals,filterOnInDeals_AndLastOut,getSymbolList, get_net_position,unpackComment_MM,from_frequency_to_resample_period,create_directory_if_not_exists
 from utils.utilPlot import plot_scatter_durations,plot_scatter,get_col_row_correlation_graph,get_cmap
@@ -37,7 +38,7 @@ class Reporter:
       self.sDurationReturnPath = path.join(self.sReportsPath, self.configcommon.get('FilePth', 'sDurationPath'))
       self.sFileName =  self.config.get('Inputs', 'sFileName')
 
-      self.lastDayEquity = 0
+      self.lastDayEquity =  pd.Timestamp('20000101 11:59:59.999999999')
       sFileOutput = self.sFileName.split('.')
       self.sFileOutput  = ''.join(sFileOutput[:-1])
       create_directory_if_not_exists(self.sDurationReturnPath)
@@ -67,6 +68,30 @@ class Reporter:
       profits_cumulated['Total'] = profits_cumulated[list(profits_cumulated.columns)].sum(axis=1)
 
       plt.plot(profits_cumulated.index.tolist(), profits_cumulated['Total'].values,label=(self.freq + '_' + self.sRunName), linestyle=self.style)
+  def plot_commissions(self,in_symbol):
+      in_df = filterBySymbol(self.df_positions,in_symbol,self.configcommon)
+      plt.hist(in_df['Commissions'], bins=100,density = True, alpha=0.5, label= in_symbol)
+      # Plot the PDF.
+      xmin, xmax = plt.xlim()
+      ymin, ymax = plt.ylim()
+
+      x = np.linspace(xmin, xmax, 100)
+      mu, std = norm.fit(in_df['Commissions'].dropna(how='all'))
+
+      p = norm.pdf(x, mu, std)
+
+      plt.plot(x, p, 'k', linewidth=2)
+      plt.xlim([xmin, xmax])
+      plt.ylim([ymin, ymax])
+      sFilePath = path.join(self.sReportsPath, self.configcommon.get('FilePth', 'sCommissionsPath'),in_symbol + '_commissions.png')
+
+      plt.legend(loc="upper right")
+      #plt.show()
+
+      plt_overwrite_and_save(sFilePath)
+      plt.close()
+
+      return {in_symbol : (mu,std)}
   def plot_profit_by_symbol(self,in_df,in_symbol,in_timeFrame,in_color) :
 
         if in_symbol == 'ALL' :
@@ -88,8 +113,6 @@ class Reporter:
   def compute_balance(self):
       self.df_positions['Profit_Total'] = self.df_positions['Profit'] + self.df_positions['Commission'] + self.df_positions['Swap_corrected']
       self.df_positions['Balance'] =self.balance_initial + self.df_positions['Profit_Total'].cumsum()
-
-
   def process_data(self):
 
       self.compute_balance()
@@ -209,7 +232,7 @@ class Reporter:
 
       sFilePath = path.join(self.sBasePathFreq,self.sFileOutput  + '_equities.csv')
       bToRecompute = not(path.exists(sFilePath))
-      bToRecompute = False
+      #bToRecompute = False
       if bToRecompute is True :
             res = pd.read_csv(sFilePath)
             res = res.set_index('idx')
@@ -543,9 +566,36 @@ class Reporter:
       plt.close()
      # plt.show()
       pass
+  def calibrate_commissions(self):
+      calibs = self.plot_commissions_all()
+      sFilePath = path.join(self.sReportsPath, self.configcommon.get('FilePth', 'sCommissionsPath'),  'Calibrations.csv')
+      values = [list(item.values()) for item in calibs]
+      values = [item[0] for item in values]
+      keys = [list(item.keys()) for item in calibs]
+      keys = [item[0] for item in keys]
+
+      df_calibs = pd.DataFrame(values,index = keys )
+      df_calibs.columns = ['mu','sigma']
+      df_calibs.to_csv(sFilePath,sep = ";")
+      pass
+  def plot_commissions_all(self):
+
+      plt.figure(figsize=(15, 15))
+      plt.xlabel('Commissions(€)')
+      plt.ylabel('Number')
+      xmax = (self.df_positions['Commissions'].max())
+      xmin = 0
+      xmax = 1
+
+      plt.xlim([xmin, xmax])
+      calibrations =[self.plot_commissions(item) for item in self.symbolListNoALL]
+      #calibrations.append({'ALL' : self.plot_commissions('ALL')})
+
+      return(calibrations)
   def run(self):
 
     # self.plot_return_correlation_symbols()
+     self.calibrate_commissions()
 
      #self.plot_histogram_SL_TP()
      plt.figure(figsize=(15, 15))
