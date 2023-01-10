@@ -76,11 +76,11 @@ class Reporter:
       ymin, ymax = plt.ylim()
 
       x = np.linspace(xmin, xmax, 100)
-      mu, std = norm.fit(in_df['Commissions'].dropna(how='all'))
+      mu, std = norm.fit(in_df['Spread'].dropna(how='all'))
 
-      p = norm.pdf(x, mu, std)
+    #  p = norm.pdf(x, mu, std)
 
-      plt.plot(x, p, 'k', linewidth=2)
+      #plt.plot(x, p, 'k', linewidth=2)
       plt.xlim([xmin, xmax])
       plt.ylim([ymin, ymax])
       sFilePath = path.join(self.sReportsPath, self.configcommon.get('FilePth', 'sCommissionsPath'),in_symbol + '_commissions.png')
@@ -589,7 +589,6 @@ class Reporter:
 
       plt.xlim([xmin, xmax])
       calibrations =[self.plot_commissions(item) for item in self.symbolListNoALL]
-      #calibrations.append({'ALL' : self.plot_commissions('ALL')})
 
       return(calibrations)
   def run(self):
