@@ -201,10 +201,10 @@ class Reporter:
           correlation_MFE = np.corrcoef(profit, MFE)
 
           m_best, b_best = np.polyfit(profit, MFE, 1)
-          plt.plot(profit, m_best * (profit) + b_best,'blue')
+          plt.plot(profit, m_best * (profit) + b_best,'orange')
 
           m_worst, b_worst = np.polyfit(profit,MAE, 1)
-          plt.plot(profit, m_worst * (profit) + b_worst,color = 'orange')
+          plt.plot(profit, m_worst * (profit) + b_worst,color = 'blue')
           plt.title(item + "(" + str(round(correlation_MAE[0,1],2)) + ")" ,fontsize=self.configcommon.get('Correlations', 'Correlations_Font_Size'))
 
   def plot_MAE_MFE(self):
@@ -233,7 +233,7 @@ class Reporter:
       sFilePath = path.join(self.sBasePathFreq,self.sFileOutput  + '_equities.csv')
       bToRecompute = not(path.exists(sFilePath))
       #bToRecompute = False
-      if bToRecompute is True :
+      if bToRecompute is False :
             res = pd.read_csv(sFilePath)
             res = res.set_index('idx')
             res.index = pd.to_datetime(res.index)
@@ -298,7 +298,7 @@ class Reporter:
 
       positions_cumulative['Point'] = positions_cumulative['Point'].fillna(method='ffill')
       positions_cumulative['PL_Points'] =(pow(10,get_point_digit( in_symbol)))*(positions_cumulative['Price'] - positions_cumulative['avgEntryPrice'])
-      positions_cumulative['Point'] = pd.to_numeric(positions_cumulative['Point'].str.strip())
+      positions_cumulative['Point'] = pd.to_numeric(positions_cumulative['Point'])
 
       positions_cumulative['PL_Points_Euro'] = positions_cumulative['PL_Points']*positions_cumulative['Point']
       positions_cumulative['PL_final']  = 100000*0.01*positions_cumulative['positioning_net']*positions_cumulative['PL_Points_Euro']
@@ -358,7 +358,7 @@ class Reporter:
       plt.figure(figsize=(15, 15))
 
       plot_scatter_durations_mainplot('ALL',profits_duration['ALL'],titles,'b',self.configcommon,xlim_all,ylim_all)
-      plt_overwrite_and_save(path.join(self.sReportsPath,self.configcommon.get('FilePth','sDurationPath'), self.config.get('Inputs', 'Frequency') + '_' + self.sRunName + '_ALL_durations.png'))
+      plt_overwrite_and_save( path.join(self.sReportsPath,self.configcommon.get('FilePth','sDurationPath'), self.config.get('Inputs', 'Frequency') + '_' + self.sRunName + '_ALL_durations.png'))
       plt.close()
   def plot_return_durations(self, in_symbol,toplot,in_nColsTotalSubPlot,in_nRowsTotalSubPlot,in_plot_count,xlim,ylim):
 
@@ -437,6 +437,8 @@ class Reporter:
       plt.plot(df_equities_to_scatter.iloc[:, 0], m * (df_equities_to_scatter.iloc[:, 0]) + b)
       plt.title((symbols[0] + '_' + symbols[1] + '(' + str(round(m, 4)) + ')'),
                 fontsize=self.configcommon.get('Correlations', 'Correlations_Font_Size'))
+      plt.xlabel(symbols[0])
+      plt.ylabel(symbols[1])
 
       plt.subplots_adjust(wspace=float(self.configcommon.get('Correlations', 'Correlations_wspace')),
                           hspace=float(self.configcommon.get('Correlations', 'Correlations_hspace')))
@@ -594,7 +596,7 @@ class Reporter:
   def run(self):
 
     # self.plot_return_correlation_symbols()
-     self.calibrate_commissions()
+     #self.calibrate_commissions()
 
      #self.plot_histogram_SL_TP()
      plt.figure(figsize=(15, 15))

@@ -1,50 +1,71 @@
 import numpy as np
 import pandas as pd
 from utils.utilReader import read_positions
-
+from utils.utilData import filterBySymbol
+from scipy.optimize import minimize
 sFilePath = 'C:\\Users\\franc\\Documents\\MetaTrader_tests\\Strategy_1_MM_crossover_Hysteresis\\12_11_Run1_No_SL_No_TP_SMA\\Run_1.1_8_21\\H1\\12_11_Run1_No_SL_No_TP_SMA-Run_1.1_8_21-H1.csv'
-dfPosition =read_positions(sFilePath)
-entry_prices = []
-entry_ATR = []
-for idx,item in dfPosition.iterrows() :
-    mask_position = (dfPosition['Ticket'] == int(item['PositionID()'])) & (dfPosition['Entry'] == 'DEAL_ENTRY_IN')
-    row = dfPosition[mask_position]
-    entry_prices.append(row['Price'].values[0])
-    entry_ATR.append(row['ATR'].values[0])
+def get_score(in_lambda,dfPosition):
 
-gs = pd.DataFrame(list(zip(entry_prices,entry_ATR)),columns=['Entry_Price','ATR_entry'])
-res = pd.concat([dfPosition,gs.set_index(dfPosition.index)],axis = 1)
-factor = 1
-res = res[(res['Entry'] == 'DEAL_ENTRY_OUT')]
-res['tt'] = res['Type'].apply(lambda x: x)
+    dfPosition_out = dfPosition.loc[(dfPosition['Entry'] == 'DEAL_ENTRY_OUT')]
 
-res['sign'] = res['Type'].apply(lambda x: 1 if x == 'DEAL_TYPE_SELL' else -1)
+    dfPosition_out = dfPosition_out[['Ticket', 'PositionID()', 'Entry', 'Profit', 'Price', 'MAE', 'MFE','Type','Point']]
+    dfPosition_out = pd.merge(dfPosition_out, dfPosition, how='left', left_on='PositionID()', right_on='Ticket')
 
-res['lambda_SL'] =-res['sign']*factor*res['ATR_entry']
-res['lambda_TP'] =res['sign']*factor*res['ATR_entry']
+    dfPosition_out = dfPosition_out[['PositionID()_x', 'Entry_x', 'Price_x', 'Profit_x', 'MAE_x', 'MFE_x', 'Price_y','Type_x','Point_x','ATR']]
+    columns_titles = ['PositionID()_x', 'Entry_x','Type_x', 'Price_x', 'Price_y', 'Profit_x', 'MAE_x', 'MFE_x','ATR','Point_x']
+    dfPosition_out = dfPosition_out.reindex(columns=columns_titles)
+    dfPosition_out.columns = ['PositionID', 'Entry','Type', 'Price_out', 'Price_in', 'Profit', 'MAE', 'MFE','ATR','Point']
+    dfPosition_out['MAE_n'] = 0.001*dfPosition_out['MAE'] / (dfPosition_out['Point']/0.00001)
+    dfPosition_out['MFE_n'] = 0.001*dfPosition_out['MFE'] /(dfPosition_out['Point']/0.00001)
+    dfPosition_out['Profit_n'] =  dfPosition_out['Profit'] / (dfPosition_out['Point']/0.00001)
+    dfPosition_out['sign'] = dfPosition_out['Type'].apply(lambda x: 1 if x == 'DEAL_TYPE_SELL' else -1)
+    dfPosition_out['ProfitBis'] = dfPosition_out['sign']*(dfPosition_out['Price_out'] - dfPosition_out['Price_in'])
 
 
-res.loc[res['lambda_SL'] > res['MAE'], 'hit_SL'] = 1
-res.loc[res['lambda_SL'] <= res['MAE'], 'hit_SL'] = 0
+    dfPosition_out['lambda_SL'] =-dfPosition_out['sign']*in_lambda*dfPosition_out['ATR']
+    dfPosition_out['lambda_TP'] =dfPosition_out['sign']*in_lambda*dfPosition_out['ATR']
 
-res.loc[res['lambda_TP'] > res['MFE'], 'hit_TP'] = 1
-res.loc[res['lambda_TP'] <= res['MFE'], 'hit_TP'] = 0
-res['Odds'] = 0
-mask = (res['hit_TP'] == 1) & (res['hit_SL'] == 1)
-res['P_out'] = np.nan
 
-res.loc[~mask,'P_out'] = res.loc[~mask,'Price']
-res.loc[mask,'Odds'] = res['MAE']/(res['MAE'] + res['MFE'])
-res.loc[~mask & res['hit_SL']== 1,'Odds'] =0
-res.loc[~mask & res['hit_SL']== 1,'P_out'] = 1
+    dfPosition_out.loc[dfPosition_out['lambda_SL'].abs() > dfPosition_out['MAE_n'], 'hit_SL'] = 0
+    dfPosition_out.loc[dfPosition_out['lambda_SL'].abs() <= dfPosition_out['MAE_n'], 'hit_SL'] = 1
 
-res.loc[~mask & res['hit_SL']== 1,'P_out'] = res.loc[~mask & res['hit_SL']== 1,'Entry_Price']-res.loc[~mask & res['hit_SL']== 1,'lambda_SL']
+    dfPosition_out.loc[dfPosition_out['lambda_TP'].abs() > dfPosition_out['MFE_n'], 'hit_TP'] = 0
+    dfPosition_out.loc[dfPosition_out['lambda_TP'].abs() <= dfPosition_out['MFE_n'], 'hit_TP'] = 1
+    dfPosition_out['Odds'] = 0
+    mask = (dfPosition_out['hit_TP'] == 1) & (dfPosition_out['hit_SL'] == 1)
+    dfPosition_out['P_out_final'] = dfPosition_out['Price_out']
+    dfPosition_out.loc[mask,'Odds'] = dfPosition_out['MAE_n']/(dfPosition_out['MAE_n'] + dfPosition_out['MFE_n'])
+    dfPosition_out.loc[~mask & dfPosition_out['hit_SL']== 1,'Odds'] =0
+    dfPosition_out.loc[~mask & dfPosition_out['hit_SL']== 1,'P_out_final'] = 1
 
-res.loc[~mask & res['hit_TP']== 1,'Odds'] =0
-res.loc[~mask & res['hit_TP']== 1,'P_out'] = res.loc[~mask & res['hit_TP']== 1,'Entry_Price']+res.loc[~mask & res['hit_TP']== 1,'lambda_TP']
-res.loc[mask,'P_out'] = res.loc[mask,'Odds']*(res.loc[mask,'Entry_Price']-res.loc[mask,'lambda_SL']) + (1-res.loc[mask,'Odds'])*(res.loc[mask,'Entry_Price']-res.loc[mask,'lambda_SL'])
-res['Profit'] = res['P_out'] - res['Entry_Price']
+    dfPosition_out.loc[~mask & dfPosition_out['hit_SL']== 1,'P_out_final'] = dfPosition_out.loc[~mask & dfPosition_out['hit_SL']== 1,'Price_in']-dfPosition_out.loc[~mask & dfPosition_out['hit_SL']== 1,'lambda_SL']
 
+    dfPosition_out.loc[~mask & dfPosition_out['hit_TP']== 1,'Odds'] =0
+    dfPosition_out.loc[~mask & dfPosition_out['hit_TP']== 1,'P_out_final'] = dfPosition_out.loc[~mask & dfPosition_out['hit_TP']== 1,'Price_in']+dfPosition_out.loc[~mask & dfPosition_out['hit_TP']== 1,'lambda_TP']
+    dfPosition_out.loc[mask,'P_out_final'] = dfPosition_out.loc[mask,'Odds']*(dfPosition_out.loc[mask,'Price_in']-dfPosition_out.loc[mask,'lambda_SL']) + (1-dfPosition_out.loc[mask,'Odds'])*(dfPosition_out.loc[mask,'Price_in']-dfPosition_out.loc[mask,'lambda_SL'])
+    dfPosition_out['Profit'] = dfPosition_out['P_out_final'] - dfPosition_out['Price_in']
+
+    profit_local =  dfPosition_out['Profit'].sum()*1000 # profit in base currency (i.e GBP)
+    profit_currency = dfPosition_out['Profit']*(dfPosition_out['Point']/0.00001)
+    return (profit_local,profit_currency)
+
+'''
+
+obj = lambda x : -1*get_score(x)
+bound = ([(0,5)])
+x0 =  (0)
+sol = minimize(obj,x0,bounds = bound)
 pass
+'''
+rng = range(0,4,1)
+rng = [item/4 for item in rng]
+score = []
+positions =read_positions(sFilePath)
+profits = positions['Profit'].sum()
+symbols = positions['Symbol'].unique()
+df_position_by_symbol = [filterBySymbol(positions,item) for item in symbols]
 
-
+res = []
+for idx,item in enumerate(df_position_by_symbol) :
+    for x in rng :
+        res.append(get_score(x,df_position_by_symbol[idx]))
