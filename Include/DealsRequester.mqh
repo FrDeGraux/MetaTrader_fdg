@@ -80,7 +80,7 @@ void DealsRequester::writeHeaders()
 
 
 
-   text+=StringFormat("%-41s %-20s %-20s %-20s %-20s %-20s",";Comment",";Extarnal id",";MFE",";MAE",";Commissions",";Point");
+   text+=StringFormat("%-41s %-20s %-20s %-20s %-20s %-20s %-20s",";Comment",";Extarnal id",";MFE",";MAE",";Commissions",";Point",";Spread");
    writeMsg(text);
 
 
@@ -178,7 +178,7 @@ void DealsRequester::writeTradeHistory()
             string  str_ATR = "";
             string s_MAE = "";
             string s_MFE = "";
-
+            string s_spread = "";
             string s_commission = "";
             string s_pointValue = "";
 
@@ -188,6 +188,8 @@ void DealsRequester::writeTradeHistory()
             s_MFE = UtilString::extractComment(extra_comment,1);
             s_commission = UtilString::extractComment(extra_comment,2);
             s_pointValue = UtilString::extractComment(extra_comment,3);
+            s_spread = UtilString::extractComment(extra_comment,4);
+
             if(deal_entry == DEAL_ENTRY_OUT)
                str_swap_corrected = UtilString::extractComment(o_comment,2);
 
@@ -235,7 +237,7 @@ void DealsRequester::writeTradeHistory()
 
 
 
-            text+=StringFormat(";%-80s ;% -19s; %-19s;%-19s;%-19s;% -19s",o_comment,o_extarnal_id,s_MFE,s_MAE,s_commission,s_pointValue);
+            text+=StringFormat(";%-80s ;%-19s; %-19s;%-19s;%-19s;%-19s;%-19s",o_comment,o_extarnal_id,s_MFE,s_MAE,s_commission,s_pointValue,s_spread);
 
 
 

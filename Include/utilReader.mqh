@@ -10,8 +10,14 @@
 #define NROWS_SWAP 5217
 #define NCOLS_SWAP  4
 
+
+#define NROWS_COM_CALIB = 10
+#define NCOLS_COM_CALIB = 3
+
 #define NROWS_FIXED_HYSTERESIS 81
 #define NCOLS_FIXED_HYSTERESIS 3
+ 
+
 
 class UtilReader
   {
@@ -20,9 +26,11 @@ private :
 
 public :
    static bool       read_swap_file(CArrayString &objects[]);
-   static void       filter_swap_array(CArrayString &objects_in[],CArrayString &objects_out[],string in_symbol);
-   static void       filter_array_on_column_value(CArrayString &objects_in[],CArrayString &objects_out[],int col_to_filter,string in_value_to_look_after);
+   static bool       read_commissions_calibration(CArrayString &res[]);
+   static bool       filter_swap_array(CArrayString &objects_in[],CArrayString &objects_out[],string in_symbol);
+   static bool       filter_array_on_column_value(CArrayString &objects_in[],CArrayString &objects_out[],int col_to_filter,string in_value_to_look_after);
    static int        getSizeBeforeNULL(CArrayString &objects_in[]);
+   static bool       get_values_from_commissions_calib_array(CArrayString &objects_in[],string in_symbol,double& mu,double& sigma);
    static bool       checkIfRange(CArrayString &objects_in[],datetime in_dt);
       static bool       checkIfRange_Year(CArrayString &objects_in[],datetime in_dt);
    static double     getSwapValue(CArrayString &objects_in[],datetime dt_in,bool isSwapLong);
@@ -119,7 +127,7 @@ int UtilReader::getRawLastDateTime(CArrayString &objects_in[],datetime dt_in)
    }
  return ArraySize(objects_in);
 }
-void UtilReader::filter_array_on_column_value(CArrayString &objects_in[],CArrayString &objects_out[],int col_to_filter,string in_value_to_look_after)
+bool UtilReader::filter_array_on_column_value(CArrayString &objects_in[],CArrayString &objects_out[],int col_to_filter,string in_value_to_look_after)
 {
 int count = 0;
   ArrayResize(objects_out,ArraySize(objects_in));
@@ -133,12 +141,26 @@ int count = 0;
          }
    
      }
-     int j=1;
-     return;
+if (count == 0)
+   return false;
+ return true;
 }
-void UtilReader::filter_swap_array(CArrayString &objects_in[],CArrayString &objects_out[],string in_symbol)
+bool UtilReader::filter_swap_array(CArrayString &objects_in[],CArrayString &objects_out[],string in_symbol)
   {
-UtilReader::filter_array_on_column_value(objects_in,objects_out, 1, in_symbol);
+
+return(UtilReader::filter_array_on_column_value(objects_in,objects_out, 1, in_symbol));
+  }
+bool UtilReader::get_values_from_commissions_calib_array(CArrayString &objects_in[],string in_symbol,double& mu,double& sigma)
+  {
+ // array of CArrStr
+  CArrayString outs[];
+if(!UtilReader::filter_array_on_column_value(objects_in,outs, 0, in_symbol))
+   return false;
+  CArrayString res = outs[0];
+  
+mu = StringToDouble(res.At(1));
+sigma = StringToDouble(res.At(2));
+return true;
   }
 bool UtilReader::read_fixed_hysteresis_file(CArrayString &res[],string sFilePath)
 {
@@ -187,8 +209,6 @@ bool UtilReader::read_swap_file(CArrayString &res[])
        return false;
    }
 
-
-
    for(int i = 0; i<NROWS_SWAP; i++)
      {
       CArrayString toInsert;
@@ -203,3 +223,35 @@ bool UtilReader::read_swap_file(CArrayString &res[])
    return true;
   }
 //+------------------------------------------------------------------+
+
+bool UtilReader::read_commissions_calibration(CArrayString &res[])
+{
+
+
+   string data[10][3];
+
+   string separator = ";";
+   int m_handle=-1;
+   ArrayResize(res,10);
+   string m_filename="Commissions_Calibrations.csv";
+   m_handle=FileOpen(m_filename,FILE_CSV | FILE_READ| FILE_ANSI|FILE_COMMON,separator);
+   if(m_handle<0)
+   {
+    Print("UtilReader" + " unable to read swap files");
+       return false;
+   }
+
+   for(int i = 0; i<10; i++)
+     {
+      CArrayString toInsert;
+
+      for(int j=0 ; j < 3 ; j++)
+         toInsert.Add(FileReadString(m_handle,10));
+      toInsert.Resize(3);
+      res[i] = toInsert;   
+     }
+
+   FileClose(m_handle);
+   return true;
+   
+}

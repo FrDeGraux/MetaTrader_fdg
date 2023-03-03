@@ -27,7 +27,7 @@
 
 #include <UtilChart.mqh>
 #include <CStrategy_Base.mqh>
-    
+
 
 
 //+------------------------------------------------------------------+
@@ -41,10 +41,10 @@ public :
 
    void              Deinit();
    bool              InitIndicators();
-  bool              Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[]);
+   bool              Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[],CArrayString& commissions_calibrations[]);
    bool               LookForEntry_StrategyCrossOver();
    bool               LookForEntry_StrategyCrossOver_old();
-
+   bool              checkForExit(bool long_exit,bool short_exit,string msg);
 protected :
 
    int               HysteresisMaxBackWardUse;
@@ -72,6 +72,48 @@ protected :
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+bool  CStrategy_TwoMM_NoFixed_Hysteresis::checkForExit(bool long_exit,bool short_exit,string msg)
+  {
+   if(!m_Symbol.RefreshRates())
+      return (false);
+
+   this.setIndicatorsValue();
+   double sl = 0;
+   double tp = 0;
+   if(long_exit)
+     {
+
+      if(OrderNumber > 0) // does an active position exist ?
+        {
+         if(!m_Trade.PositionCloseEnhanced(ULONG_MAX,ORDER_TYPE_BUY,msg))
+            return false;
+         Short = false;
+         Long = false;
+         OrderNumber = 0;
+         Print(" Used Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_USED)));
+         Print(" Max Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_LIMIT)));
+        }
+        return false;
+     }
+
+   else
+      if(short_exit)
+        {
+
+         if(OrderNumber > 0) // does an active position exist ?
+           {
+            if(!m_Trade.PositionCloseEnhanced(ULONG_MAX,ORDER_TYPE_SELL,msg))
+               return false;
+            Short = false;
+            Long = false;
+            OrderNumber = 0;
+            Print(" Used Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_USED)));
+            Print(" Max Memory is " + IntegerToString(MQLInfoInteger(MQL_MEMORY_LIMIT)));
+           }
+           return false;
+        }
+   return(true);
+  }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -111,8 +153,8 @@ double CStrategy_TwoMM_NoFixed_Hysteresis::getHysteresis()
 //+------------------------------------------------------------------+
 CStrategy_TwoMM_NoFixed_Hysteresis::CStrategy_TwoMM_NoFixed_Hysteresis(enMaTypes _MA,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange,int _HysteresisMaxBackWardUse)
   {
-  
-  
+
+
    HysteresisMaxBackWardUse = _HysteresisMaxBackWardUse;
 // extra spread inputed
 
@@ -133,17 +175,23 @@ CStrategy_TwoMM_NoFixed_Hysteresis::CStrategy_TwoMM_NoFixed_Hysteresis(enMaTypes
    FastMethod = _MA;
 
   }
-  
-  
+
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 
-bool CStrategy_TwoMM_NoFixed_Hysteresis::Init(string Pair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[])
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CStrategy_TwoMM_NoFixed_Hysteresis::Init(string sPair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[],CArrayString& commissions_calibrations[])
   {
 
-   if(!CStrategy_Base::Init(magic,Pair,slippage,lot,useSLTP,_debugger,swap_rates))
-      Print(" CStrategy_TwoMM_NoFixed_Hysteresis " + " unable to initiate");
+   if(!CStrategy_Base::Init(sPair,magic,slippage,lot,useSLTP,_debugger,swap_rates,commissions_calibrations))
+     {
+      Print(" CStrategy_TwoMM_Base " + " unable to initiate");
+      return false;
+     }
    return(InitIndicators());
   }
 
@@ -198,7 +246,7 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::InitIndicators()
      }
 
    CMqlParams params;
-   if(!m_Fast.Create(m_Pair, 0, i_FastPeriod,0,  (ENUM_MA_METHOD)FastMethod, PRICE_CLOSE,params))
+   if(!m_Fast.Create(m_Pair, 0, i_FastPeriod,0, (ENUM_MA_METHOD)FastMethod, PRICE_CLOSE,params))
      {
       Print("CStrategy_TwoMM_NoFixed_Hysteresis::Error initializing fast MA");
       return(false);
@@ -261,41 +309,45 @@ bool CStrategy_TwoMM_NoFixed_Hysteresis::LookForEntry_StrategyCrossOver()
    if(!m_Symbol.RefreshRates())
       return false;
    m_Indis.Refresh();
-
+   bool enter_long_signal = false;
+   bool enter_short_signal  = false;
+   
    double Slow_MA;
    if(UtilTerminal::useCiCustomMA_Yellow_Hysteresis())
       Slow_MA = m_Fast.GetData(3,0); // Slow_MA is included in the CiCustomMA_Yellow_Hysteresis
    else
       Slow_MA = m_Slow.GetData(0,0);
-      
+
    double fast_MA = m_Fast.GetData(0,0);
 
    double hysteresis = 0;
 
    string msg = "";
 
-   bool pre_buy_signal =   !Long && (fast_MA >= (Slow_MA));
-   bool pre_sell_signal =   !Short && (fast_MA <= (Slow_MA));
+   bool exit_short_signal =   !Long && (fast_MA >= (Slow_MA));
+   bool exit_long_signal =   !Short && (fast_MA <= (Slow_MA));
 
-   bool buy_signal = false;
-   bool sell_signal = false;
-   if(pre_buy_signal || pre_sell_signal)
+
+   if(exit_short_signal || exit_long_signal)
       hysteresis = getHysteresis();
 
 
-   if(pre_buy_signal)
-      buy_signal =   !Long && (fast_MA >= (Slow_MA + hysteresis)); // if we are not already long
-   if(pre_sell_signal)
-      sell_signal =   !Short && (fast_MA + hysteresis <= (Slow_MA)); // if we ar not alreafy shorrt
-   if(buy_signal || sell_signal)
+   if(exit_short_signal)
+      enter_long_signal =   !Long && (fast_MA >= (Slow_MA + hysteresis)); // if we are not already long
+   if(exit_long_signal)
+      enter_short_signal =   !Short && (fast_MA + hysteresis <= (Slow_MA)); // if we ar not alreafy shorrt
+   if(exit_short_signal || exit_long_signal)
      {
-     int nDigits =this.m_Symbol.getNDigitsFormat();
+      int nDigits =this.m_Symbol.getNDigitsFormat();
       msg = DoubleToString((Slow_MA),nDigits) + "_" + DoubleToString((fast_MA),nDigits)+ "_" + DoubleToString((double)(hysteresis)/this.m_Symbol.getPointSize(),1);
-         
-     }
-     
 
-   return(CStrategy_Base::CheckEntry(buy_signal,sell_signal,msg));
+     }
+
+   bool bCheckExit = checkForExit(exit_long_signal,exit_short_signal,msg);
+   if (bCheckExit == true)
+      return bCheckExit;
+      
+   return(CStrategy_Base::CheckEntry(enter_long_signal,enter_short_signal,msg));
 
 
 

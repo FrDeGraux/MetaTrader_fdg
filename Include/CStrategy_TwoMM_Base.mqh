@@ -31,10 +31,10 @@ protected:
    enMaTypes         SlowMethod;
    enMaTypes         FastMethod;
 public:
-                     CStrategy_TwoMM_Base(string sPair,enMaTypes MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)   ;
+                     CStrategy_TwoMM_Base(enMaTypes MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)   ;
    bool              LookForEntry_StrategyCrossOver();
                     ~CStrategy_TwoMM_Base();
-   bool              Init(int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[]);
+   bool              Init(string sPair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[],CArrayString& commissions_calibrations[]);
    bool              InitIndicators();
   };
 
@@ -104,14 +104,14 @@ bool CStrategy_TwoMM_Base::InitIndicators(void)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CStrategy_TwoMM_Base::CStrategy_TwoMM_Base(string sPair,enMaTypes _MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)  : CStrategy_Base(sPair)        // Constructor
+CStrategy_TwoMM_Base::CStrategy_TwoMM_Base(enMaTypes _MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)  : CStrategy_Base()        // Constructor
   {
    ATR_MAPeriod = _ATR_MAPeriod;
    ATR_TPRange = _ATR_TPRange;
    ATR_StopLossRange=_ATR_StopLossRange;
    ATR_TPRange = _ATR_TPRange;
    ticks = 0;
-swap_rate = 0;
+   swap_rate = 0;
    m_Slow = NULL;
    m_Fast = NULL;
    SlowPeriod = slowPeriod;
@@ -127,10 +127,10 @@ CStrategy_TwoMM_Base::~CStrategy_TwoMM_Base()
   {
   }
 //+------------------------------------------------------------------+
-bool CStrategy_TwoMM_Base::Init(int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[])
+bool CStrategy_TwoMM_Base::Init(string sPair,int slippage,double lot,int magic,bool useSLTP,CSVDebugger* _debugger,CArrayString& swap_rates[],CArrayString& commissions_calibrations[])
   {
 
-   if(!CStrategy_Base::Init(magic,slippage,lot,useSLTP,_debugger,swap_rates))
+   if(!CStrategy_Base::Init(sPair,magic,slippage,lot,useSLTP,_debugger,swap_rates,commissions_calibrations))
      {
       Print(" CStrategy_TwoMM_Base " + " unable to initiate");
       return false;

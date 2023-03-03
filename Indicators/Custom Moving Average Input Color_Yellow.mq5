@@ -181,8 +181,7 @@ void OnInit()
 //   PlotIndexSetInteger(0,PLOT_LINE_COLOR,InpColor);
 //--- name for DataWindow
 
-  Print("Yellow init");
-
+  
 //---- sets drawing line empty value--
    PlotIndexSetDouble(0,PLOT_EMPTY_VALUE,0.0);
 //---- initialization done
@@ -195,7 +194,7 @@ int OnCalculate(const int rates_total,
                 const int begin,
                 const double &price[])
   {
-  Print("Yellow calculate");
+
 //--- check for bars count
    if(rates_total<InpMAPeriod-1+begin)
       return(0);// not enough bars for calculation

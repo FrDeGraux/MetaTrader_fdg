@@ -46,9 +46,6 @@ bool CICustomMA_Yellow_NoFixedHysteresis::Create(const string symbol,const ENUM_
                const ENUM_MA_METHOD ma_method,const int applied,CMqlParams& params)
   {
   
-
-   
-
              if(params.Total() == 0) 
                params.Set(this.ind_Name, TYPE_STRING); // set first pramc with value ind_name
                
@@ -61,7 +58,7 @@ bool CICustomMA_Yellow_NoFixedHysteresis::Create(const string symbol,const ENUM_
 
      if(!BufferResize(window_backward))
      {
-         Print("CICustomMA_Yellow_NoFixedHysteresis Error BufferResizeHysteresis MA");
+         Print("Error BufferResizeHysteresis MA");
       return(false);  
      }
 //--- ok
