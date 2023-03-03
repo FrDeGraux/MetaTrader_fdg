@@ -75,7 +75,7 @@ class MultiTFReporter :
             step_lim = iBarStep
         xindexes = np.arange(-iBarStep, step_lim + step_values,step_values)
         for idx,_ in enumerate(data.columns) :
-            plt.bar(data.index.year  + xindexes[idx], data.iloc[:,idx], step_values, label=self.names[idx])
+            plt.bar(data.index.year -1  + xindexes[idx], data.iloc[:,idx], step_values, label=self.names[idx])
         if ylim is not None:
             ax.set_ylim([-ylim, ylim])
         plt.legend(bbox_to_anchor=(1, 1.0), loc='upper left',fontsize = 5)
@@ -118,6 +118,7 @@ class MultiTFReporter :
         # for the symbol
 
     def plot_durations_comparisons(self):
+
         bounds_all_reporters = [item.compute_duration_bounds() for item in self.lst_reporters]
 
         bounds_not_all = [item[0] for item in bounds_all_reporters]
@@ -139,24 +140,29 @@ class MultiTFReporter :
 
         sTitle = [item.sFileOutput for item in self.lst_reporters]
         sTitle = ",".join(sTitle)
-        sTitle = 'Correlations : ' + sTitle   +  " (" + self.lst_reporters[0].freq + ")"
+        sTitle = 'Correlations : ' + sTitle + " (" + self.lst_reporters[0].freq + ")"
         plt.suptitle(sTitle, fontsize=int(self.config_common.get('Correlations', 'Correlations_SupTitleSize')))
 
-        sFileName_NotALL =  self.lst_reporters[0].freq + '_' + self.sRunName + '_durations.png'
-        sFileName_ALL =  self.lst_reporters[0].freq + '_' + self.sRunName + '_ALL_durations.png'
-        sSavePath = path.join(self.sBasePath,self.comparisons,self.lst_reporters[0].freq,'Reports','Durations_Returns')
+        sFileName_NotALL = self.lst_reporters[0].freq + '_' + self.sRunName + '_durations.png'
+        sFileName_ALL = self.lst_reporters[0].freq + '_' + self.sRunName + '_ALL_durations.png'
+        sSavePath = path.join(self.sBasePath, self.comparisons, self.lst_reporters[0].freq, 'Reports', 'Durations_Returns')
 
-
-        plt_overwrite_and_save(sSavePath,sFileName_NotALL)
+        plt_overwrite_and_save(sSavePath, sFileName_NotALL)
 
         plt.close()
 
-        for reporter in self.lst_reporters :
-            plot_scatter_durations_mainplot('ALL',reporter.profits_duration['ALL'],'te',reporter.durations_color,self.config_common,x_bounds_all,y_bounds_all)
+        fig = plt.figure(figsize=(15, 15))
+        ax = plt.gca()
+
+        for reporter in self.lst_reporters:
+            plot_scatter_durations_mainplot('ALL', reporter.profits_duration['ALL'], ax, 'te', reporter.durations_color,
+                                            self.config_common, x_bounds_all, y_bounds_all)
+        plt.suptitle(sTitle)
         plt.suptitle(sTitle)
 
-        plt_overwrite_and_save(sSavePath,sFileName_ALL)
+        plt_overwrite_and_save(sSavePath, sFileName_ALL)
         plt.close()
+
     def plot_profits_all_timeframes(self): # for one run
         # By Symbol,plot inside the reporter function
         for symbol in self.sSymbolList :
