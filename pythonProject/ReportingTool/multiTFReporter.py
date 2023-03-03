@@ -89,10 +89,11 @@ class MultiTFReporter :
         percents = [item.df_equities_percent for item in self.lst_reporters]
         symbols = self.symbolListNoALL
         df_concat = [pd.concat(item, axis=1) for item in self.percents]
+        df_ultimate = [pd.DataFrame.from_records(item,index = ['A']) for item in self.df_equities_ultimate_percent]
+        df_concat = [df_periodic_item.append(df_ultimate_item, ignore_index=True) for df_periodic_item,df_ultimate_item in zip (df_concat,df_ultimate)]
         df_concat = [item.dropna() for item in df_concat]
 
         df_concat_all= [item['ALL'] for item in df_concat]
-
         df_concat_noall= [item.drop(columns = ['ALL']) for item in df_concat]
 
 
