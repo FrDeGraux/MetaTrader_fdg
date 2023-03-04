@@ -40,10 +40,9 @@ def run_multiple_methods(in_sComparaison,in_sRunName,in_freq,config_subrunList,c
     reporters  = [Reporter((path.join(sBaseConfig,sMethod,subRunPath,from_freq_to_config_file(in_freq,sSubRunName))),(path.join(sBaseConfig,sMethod,sSubRunName + '.ini')),config_common) for subRunPath,sSubRunName,sMethod in zip(config_paths_subruns,config_subrunList,sMetaMethod)]
     sRunName = config_common.get('Names', 'runName')
     objMultipleReporter = MultiTFReporter(reporters,in_sComparaison,in_sRunName,config_common,config_common.get('FilePth','sBasePath'))
-    objMultipleReporter.plot_durations_comparisons()
+    #objMultipleReporter.plot_durations_comparisons()
 #    objMultipleReporter.plot_profits_all_timeframes()
-
-  #  objMultipleReporter.bar_all_profits()
+    [item.make_waterfall_return_figure() for item in reporters]
 
 def run_multiple_timeframes():
     reporters  = [Reporter(init_config(from_freq_to_config_file(freq)),config_subrun,config_common) for freq in frequencies]
@@ -85,11 +84,11 @@ def run_SMA_vs_SMA_hysreresis() :
     config_paths_subruns = ['SMA_8_21_NO_SL_NO_TP', 'SMA_8_21_NO_SL_NO_TP', 'SMA_15_30_NO_SL_NO_TP',
                             'SMA_15_30_NO_SL_NO_TP', 'SMA_50_160_NO_SL_NO_TP', 'SMA_50_160_NO_SL_NO_TP', 'SMA_20_50_NO_SL_NO_TP', 'SMA_20_50_NO_SL_NO_TP']
 
-    config_subrunList = ['config_run_1_1', 'config_run_4_1']
-    config_paths_subruns = ['SMA_8_21_NO_SL_NO_TP', 'SMA_8_21_NO_SL_NO_TP']
+    config_subrunList = ['config_run_1_2', 'config_run_4_2']
+    config_paths_subruns = ['SMA_15_30_NO_SL_NO_TP', 'SMA_15_30_NO_SL_NO_TP']
 
     sMetaMethod = ['SMA_crossover', 'SMA_crossover_DynamicHysteresis', 'SMA_crossover', 'SMA_crossover_DynamicHysteresis', 'SMA_crossover', 'SMA_crossover_DynamicHysteresis']
-    sRunName = 'Run1.1_vs_Run4.1' \
+    sRunName = 'Run1.2_vs_Run4.2' \
                ''
     #  run_single_timeframe('D1','EMA_15_30_NO_SL_NO_TP','EMA_crossover')
     [run_multiple_methods(path.join('Comparaisons', sRunName), sRunName, item, config_subrunList, config_paths_subruns,

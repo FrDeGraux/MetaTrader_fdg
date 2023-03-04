@@ -8,7 +8,7 @@ from utils.utilPlot import plot_scatter_durations,plot_scatter,get_col_row_corre
 from itertools import combinations
 from math import floor
 import matplotlib.dates as mdates
-from utils.utilPlot import plt_overwrite_and_save,from_plot_to_x_y,plot_scatter_durations_subplot,plot_scatter_durations_mainplot
+from utils.utilPlot import go_overwrite_and_save,plt_overwrite_and_save,from_plot_to_x_y,plot_scatter_durations_subplot,plot_scatter_durations_mainplot
 
 from utils.utilMapping import from_entry_to_category
 bAdjustSwapCorrectedFactor = 10000
@@ -659,6 +659,37 @@ class Reporter:
       calibrations =[self.plot_commissions(item) for item in self.symbolListNoALL]
 
       return(calibrations)
+  def make_waterfall_return_figure(self):
+      import plotly.graph_objects as go
+      df_equities_ultimate_percent_no_all = {k: self.df_equities_ultimate_percent[k] for k in self.df_equities_ultimate_percent.keys() - {'ALL'}}
+
+      df_equities_ultimate_percent_no_all = dict(sorted(df_equities_ultimate_percent_no_all.items(), key=lambda x: x[0].lower()))
+      df_equities_ultimate_percent_no_all.update({'ALL' : self.df_equities_ultimate_percent['ALL']})
+      df_equities_ultimate_percent = df_equities_ultimate_percent_no_all.copy()
+
+      measures = ["relative" for item in list(df_equities_ultimate_percent_no_all)]
+      measures.append("total")
+      symbols = [item for item in df_equities_ultimate_percent.keys()]
+      yvalues = [round(100*item,2) for item in df_equities_ultimate_percent.values()]
+      text = [str(item) + '%' for item in yvalues]
+      fig = go.Figure(go.Waterfall(
+          name="20", orientation="v",
+          measure=measures,
+          x=symbols,
+          textposition="outside",
+          text=text,
+          y=yvalues,
+          connector={"line": {"color": "rgb(63, 63, 63)"}},
+      ))
+
+      fig.update_layout(
+          title=self.freq + '_' + +self.sTitlePrefix ,
+          showlegend=True
+      )
+      fig.show()
+      go_overwrite_and_save(self.sReportsPath, self.sRunName + '_Waterfall' + '.png',fig)
+
+      pass
   def run(self):
 
     # self.plot_return_correlation_symbols()
