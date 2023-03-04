@@ -686,7 +686,6 @@ class Reporter:
           title=self.freq + '_' + +self.sTitlePrefix ,
           showlegend=True
       )
-      fig.show()
       go_overwrite_and_save(self.sReportsPath, self.sRunName + '_Waterfall' + '.png',fig)
 
       pass
