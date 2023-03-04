@@ -111,7 +111,7 @@ class MultiTFReporter :
 
         for idx,symbol in enumerate(symbols ):
             self.bar_symbol_profit(symbol,1+idx,ax,ylims_noall)
-
+        plt.title('Bars_' + self.freq + '_' + self.sRunName)
         plt.savefig(path.join(self.sBasePath, self.comparisons, self.lst_reporters[0].freq, 'Reports','Bars_' + self.sRunName + '_' + symbol + '.png'), dpi=800)
 
         pass
