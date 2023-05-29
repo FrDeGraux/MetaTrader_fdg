@@ -95,10 +95,10 @@ bool CICustomMA::Create(const string symbol,const ENUM_TIMEFRAMES period,
 
    if(params.Total() == 0)
       params.Set(this.ind_Name, TYPE_STRING); // set first pramc with value ind_name
-   params.Set(ma_method, TYPE_UCHAR);
+
    params.Set(ma_period, TYPE_UCHAR);
 
-  
+   params.Set(ma_method, TYPE_UCHAR);
 // set extra Hysteresis Parameter for MM
 
 

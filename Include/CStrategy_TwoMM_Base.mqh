@@ -6,30 +6,28 @@
 #property copyright "Copyright 2021, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
 #property version   "1.00"
-#include <CStrategy_Base.mqh>
 #include <Indicators\CICustomMA.mqh>
+#include <CStrategy_Base.mqh>
 #include <Indicators\CICustomMA_Yellow.mqh>
 #include <Indicators\CICustomMA_Cyan.mqh>
 #include <Indicators\CICustomMA_White.mqh>
 #include <Indicators\CiMA_Enhanced.mqh>
-class CStrategy_TwoMM_Base : public CStrategy_Base
+class CStrategy_TwoMM_Base : public CStrategy_Base 
   {
-private:
-
+private : 
    int               ATR_MAPeriod;
    int               ATR_StopLossRange;
    int               ATR_TPRange;
-
+   int               ticks;
    bool              isLong();
-
    double            swap_rate;
-protected:
-   CIndicator_Enhanced          *m_Slow;                    // Slow moving average indicator
-   CIndicator_Enhanced   *m_Fast;
-   int               FastPeriod;
-   int               SlowPeriod;
-   enMaTypes         SlowMethod;
-   enMaTypes         FastMethod;
+   protected:
+      CIndicator_Enhanced          *m_Slow;                    // Slow moving average indicator
+      CIndicator_Enhanced   *m_Fast;
+      int               FastPeriod;
+      int               SlowPeriod;
+      enMaTypes         SlowMethod;
+      enMaTypes         FastMethod;
 public:
                      CStrategy_TwoMM_Base(enMaTypes MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)   ;
    bool              LookForEntry_StrategyCrossOver();
@@ -38,6 +36,31 @@ public:
    bool              InitIndicators();
   };
 
+//+------------------------------------------------------------------+
+//|                                       CStrategy_TwoMM_Common.mqh |
+//|                                  Copyright 2021, MetaQuotes Ltd. |
+//|                                             https://www.mql5.com |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2021, MetaQuotes Ltd."
+#property link      "https://www.mql5.com"
+//+------------------------------------------------------------------+
+
+CStrategy_TwoMM_Base::CStrategy_TwoMM_Base(enMaTypes _MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)
+{
+   ATR_MAPeriod = _ATR_MAPeriod;
+   ATR_TPRange = _ATR_TPRange;
+   ATR_StopLossRange=_ATR_StopLossRange;
+   ATR_TPRange = _ATR_TPRange;
+   ticks = 0;
+   swap_rate = 0;
+   m_Slow = NULL;
+   m_Fast = NULL;
+   SlowPeriod = slowPeriod;
+   FastPeriod = fastPeriod;
+
+   SlowMethod = _MAMethod;
+   FastMethod = _MAMethod;
+}
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -104,22 +127,7 @@ bool CStrategy_TwoMM_Base::InitIndicators(void)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CStrategy_TwoMM_Base::CStrategy_TwoMM_Base(enMaTypes _MAMethod,int slowPeriod,int fastPeriod,int _ATR_MAPeriod,int _ATR_StopLossRange,int _ATR_TPRange)  : CStrategy_Base()        // Constructor
-  {
-   ATR_MAPeriod = _ATR_MAPeriod;
-   ATR_TPRange = _ATR_TPRange;
-   ATR_StopLossRange=_ATR_StopLossRange;
-   ATR_TPRange = _ATR_TPRange;
-   ticks = 0;
-   swap_rate = 0;
-   m_Slow = NULL;
-   m_Fast = NULL;
-   SlowPeriod = slowPeriod;
-   FastPeriod = fastPeriod;
 
-   SlowMethod = _MAMethod;
-   FastMethod = _MAMethod;
-  }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+

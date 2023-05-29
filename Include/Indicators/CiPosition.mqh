@@ -15,9 +15,10 @@
 class CiPosition : public CiCustom
   {
 private:
-
-public:
-                     CiPosition();
+                     string sIndicName;
+                     int nBuffers;
+      public:
+                     CiPosition(string sIndicName = INDICATOR_NAME,int nBuffers = 1);
                     ~CiPosition();
                     double            Main(const int index) const;
                     bool Create(  string symbol,ENUM_TIMEFRAMES tf);
@@ -30,7 +31,7 @@ public:
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CiPosition::CiPosition()
+CiPosition::CiPosition(string _sIndicName,int _nBuffers) : sIndicName(_sIndicName),nBuffers(_nBuffers)
   {
   }
 //+------------------------------------------------------------------+
@@ -54,7 +55,7 @@ bool CiPosition::Create(  string symbol,ENUM_TIMEFRAMES tf)
 {
    // #1 Setup the MQL params array for the custom indicator.
    CMqlParams params;
-   params.Set(INDICATOR_NAME, TYPE_STRING);
+   params.Set(sIndicName, TYPE_STRING);
 
 
    int handle = -1;
@@ -82,7 +83,7 @@ bool CiPosition::Initialize(const string symbol,
    // #1 Specify if this indicator redraws
    this.Redrawer(true);
    // #2 Specify the number of indicator buffers to be used. 
-   if (!this.NumBuffers(1))
+   if (!this.NumBuffers(nBuffers))
       return false; 
    // #3 Call super.Initialize 
    if (!CiCustom::Initialize(symbol, period, num_params, params))
