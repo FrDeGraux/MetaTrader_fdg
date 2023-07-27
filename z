@@ -1,0 +1,71 @@
+* [33m3dbc113b[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m)[m A first ubuntu commit
+* [33m6e6e27c4[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m With alternative_view
+* [33m53f0c02a[m PyRemove "PyTRemove"
+* [33m404db756[m git commit -m "MF-80 <Change title of the bar to relate to run/date>"
+* [33ma9ff65fe[m git commit -m "MF-86 <message>"
+* [33mb64cf545[m git commit -m "MF-86 <Ultimate Bar return with each symbol contribution>"
+* [33m235d4bcb[m git commit -m "MF-84 <Push the reports>"
+* [33meef1da07[m git commit -m "MF-82 <Bar graph : ultimate return not shown>"
+* [33m6d1f1fd2[m Year in the bar plot is shifted from one
+* [33m94d16f77[m git commit -m "MF-81 <Year in the bar plot is shifted from one>"
+* [33medabf38a[m git commit -m "MF-79 <message>"
+* [33m08531d8f[m git commit -m "MF-72 <message>"
+* [33mb1ec038f[m git commit -m "MF-65 <commissions_done_via_genuine_spread>"
+* [33mf9b6ccd1[m git commit -m "MF-65 <Commissions : one pic for each with the histogram>"
+* [33m581ab73e[m git commit -m "MF-66 <Final profits have a jump>"
+* [33m85880cdf[m git commit -m "MF-62 <Profit/Swap/Commission>"
+* [33m48fdc3fe[m git commit -m "MF-58 <Swap value seems not computed>"
+* [33mfdd9f9ce[m git commit -m "MF-56 <Reporting tool :Add last functionnalities before going to production>"
+* [33mc7c44cc9[m git commit -m "MF-54 <message>"
+* [33me5948fb9[m git commit -m "MF-53 <commissions do not show for trades out>"
+* [33md493c56c[m git commit -m "MF-52 <rolloverday_fixed>"
+* [33m30caee2a[m git commit -m "MF-52 <fix Jpy points>"
+* [33m34b2dcdc[m git commit -m "MF-51 <default_template>"
+* [33m74fdfa04[m git commit -m "MF-48 <message>"
+* [33m19bc19b0[m git commit -m "MF-48 <Daily resampling in Equity output>"
+* [33m621416b0[m git commit -m "MF-43 <Equity output in the reporting tool>"
+* [33mae023d88[m git commit -m "MF-47 <Commissions ( including spreads) to be included in MT5 output>"
+* [33mf125f949[m git commit -m "MF-46 <Outpoint Point value in MT5 output>"
+* [33mbef816c8[m With extra outputs
+* [33m3342f390[m git commit -m "MF-29 <Excursions>"
+* [33m46c9584b[m git commit -m "MF-39 <Make strategy workable for no fixed hysteresis and no hysteresis at all>"
+* [33m3b80531a[m git commit -m "MF-40 <OOP Reporting>"
+* [33mb6c3d5c9[m git commit -m "MF-37 <With deque + no hysteresis stratefy>"
+* [33m19975139[m git commit -m "MF-20 Choose MA_type as an input"
+* [33m369cfc8c[m git commit -m "MF-33 Colors in profit plot"
+* [33mf6b4aa41[m git commit -m "MF-2 <Set All charts in viewer in Red/Green>"
+* [33m60b82069[m git commit -m "MF-32 <Error as 2011 date outputted as last one in hysteresis calibration>"
+* [33m9f9ead5a[m Reporting config changes (minor commit)
+* [33mb71ad40d[m git commit -m "MF-27 <Hysteresis calibration : Titles in chart pictures>"
+* [33mc42f4c11[m git commit -m "MF-25 Fixed_hysteresis_validated"
+* [33m23be2f1f[m MF-23 <fixed_hysteresis_toTest>
+* [33md4c88133[m Fixed-hysteresis-python-appending
+* [33m5a161443[m test-commiting
+* [33mdaa79e76[m MF-21 with SMA_EMA_common_graph
+* [33m22b59c38[m MF-15 <Python_All_timeframes_profits>
+* [33mf2ed172f[m MF-18 hysteresis_output_in_points
+* [33mf39c7709[m MF-9,MF-12 reporting_ammended
+* [33me47ef1a6[m MF-7 swap-at-end-of-test
+* [33m9739da41[m MF-6 output_swap_corrected
+* [33m6cec3e51[m MF-4 with_output_tick
+* [33m201e3253[m MF-1 With_swap_beta
+* [33mdb458211[m with Python reporting
+* [33m935d1ee1[m v 1.0.1 with Balance bug fixed and indicators displayed in Viewer
+* [33mfff88486[m v1_beta : hysteresis working
+* [33md136303f[m Wih correct hysteresis
+* [33m75e64932[m With Hysteressis yellow using MT5 MA
+* [33m5bbc5065[m v1 beta : no leaks, no hysteresis : working in non viewer mode
+* [33m296d58fd[m With corrected hysteresis + debug file systematically produced
+* [33m0b66fe73[m bb
+* [33mdb068360[m No GUI in basis expert + first run with hysteresis + optional debug/deal file produxtion
+* [33m4ee54635[m Functional hysteresis + No GUI in Expert + No production of debug/deal files if void
+* [33mb20e172d[m first Medium MA Hysteresis draft
+* [33me11be211[m With Equity and balance fixed
+* [33m016e4305[m no residual ATR indicator displayed anymore
+* [33ma8524551[m With conditional GUI
+* [33m0456cabe[m Signed-off-by: franc <francoisdegraux@gmail.com>
+* [33m31cb77ce[m With SL/TP
+* [33mb7bd01b6[m Take Profit + GUI
+* [33mb228002f[m Signed-off-by: franc <francoisdegraux@gmail.com>
+* [33m7c8fbbcb[m initial-commit
+* [33m98fc20a7[m r
